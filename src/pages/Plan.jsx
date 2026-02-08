@@ -75,7 +75,9 @@ export default function Plan() {
   }
 
   const handleContinueToQuote = () => {
-    navigate('/quote', { state: { selectedItineraryId: selectedId || (options[0]?.id) || 'opt_1' } })
+    const selected = options.find((o) => o.id === (selectedId || options[0]?.id)) || options[0]
+    if (!selected) return
+    navigate('/quote', { state: { selectedItineraryId: selected.id, selectedOption: selected } })
   }
 
   const handleGetAIPlanAndQuote = async () => {
@@ -83,7 +85,7 @@ export default function Plan() {
     setCustomPlanning(true)
     try {
       const res = await planWithPicks({ picks: picks.map((p) => ({ label: p.label, google_maps_url: p.google_maps_url })) })
-      navigate('/quote', { state: { selectedItineraryId: res?.option_id || 'custom_from_picks' } })
+      navigate('/quote', { state: { selectedItineraryId: res?.option_id || 'custom_from_picks', selectedOption: res?.option } })
     } catch (err) {
       setCustomPlanning(false)
     }

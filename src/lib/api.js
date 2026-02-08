@@ -238,13 +238,40 @@ const mockItineraryOptions = [
   },
 ]
 
-const mockQuote = {
+// In-depth quote: breakdown by category + points optimization (backend can analyze option and return this shape)
+const DEFAULT_MOCK_QUOTE = {
   subtotal: 2840,
   platform_fee: 15,
   total: 2855,
-  best_card_to_use: 'Amex Gold (4x on Dining/Flights)',
-  potential_points_earned: 4800,
   per_person: 1427.5,
+  breakdown: {
+    flights: [
+      { description: 'Outbound: SFO → NRT (economy)', amount: 720 },
+      { description: 'Return: NRT → SFO (economy)', amount: 680 },
+    ],
+    hotels: [
+      { description: 'Aman Tokyo, 3 nights', amount: 980 },
+    ],
+    activities: [
+      { description: 'Tsukiji market & TeamLab Borderless', amount: 120 },
+      { description: 'Mt. Fuji day trip', amount: 180 },
+      { description: 'Local transport & dining', amount: 160 },
+    ],
+  },
+  points_optimization: {
+    best_card_to_use: 'Amex Gold (4x on Dining/Flights)',
+    potential_points_earned: 4800,
+    suggestions: [
+      'Book flights with Amex Platinum for 5x points; use Amex Gold for dining and groceries (4x).',
+      'Transfer Chase Ultimate Rewards to United or Hyatt for better redemption value on this itinerary.',
+      'Consider paying hotel with Chase Sapphire Reserve for 3x travel and primary rental car coverage.',
+    ],
+    transfer_partners: ['Chase → United, Hyatt', 'Amex → Delta, Marriott'],
+    redemption_tips: [
+      'United MileagePlus: good for SFO–NRT if saver space opens; check 30 days out.',
+      'Hyatt: redeem for Aman Tokyo if points availability (high value per point).',
+    ],
+  },
 }
 
 async function request(method, path, body) {
@@ -336,12 +363,39 @@ export async function planWithPicks(payload) {
   return request('POST', '/itinerary/plan-with-picks', payload)
 }
 
-export async function getQuote(itineraryId) {
+/**
+ * Get an in-depth quote for the selected itinerary option. Backend analyzes the plan (flights, hotels, activities)
+ * and returns itemized breakdown + points optimization suggestions.
+ * @param {object} option - The selected itinerary option (id, label, daily_plan, total_estimated_cost, etc.)
+ * @returns {Promise<{ subtotal, platform_fee, total, per_person?, breakdown?, points_optimization? }>}
+ */
+export async function getQuote(option) {
   if (USE_MOCK) {
-    await delay(400)
-    return mockQuote
+    await delay(600)
+    const cost = option?.total_estimated_cost ?? 2840
+    const subtotal = cost
+    const platform_fee = 15
+    const total = subtotal + platform_fee
+    return {
+      subtotal,
+      platform_fee,
+      total,
+      per_person: (total / 2).toFixed(2),
+      breakdown: DEFAULT_MOCK_QUOTE.breakdown,
+      points_optimization: DEFAULT_MOCK_QUOTE.points_optimization,
+    }
   }
-  return request('GET', `/itinerary/${itineraryId}/quote`)
+  const url = `${ITINERARY_API_BASE}/itinerary/quote`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ option: option || {} }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Quote API error ${res.status}`)
+  }
+  return res.json()
 }
 
 // --- Saved plans (Supabase only; no mock) ---
@@ -469,7 +523,7 @@ export async function checkout(itineraryId) {
       booking_id: 'book_1',
       pdf_url: '#',
       itinerary_summary: mockItineraryOptions[1],
-      bill_summary: mockQuote,
+      bill_summary: { subtotal: DEFAULT_MOCK_QUOTE.subtotal, platform_fee: DEFAULT_MOCK_QUOTE.platform_fee, total: DEFAULT_MOCK_QUOTE.total },
     }
   }
   return request('POST', `/itinerary/${itineraryId}/checkout`)

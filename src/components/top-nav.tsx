@@ -1,7 +1,7 @@
 "use client"
 
 import { useNavigate } from "react-router-dom"
-import { Compass, Users, FolderOpen, PlusCircle, ChevronDown, Bell } from "lucide-react"
+import { Compass, Users, FolderOpen, PlusCircle, ChevronDown } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -10,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 
@@ -70,12 +69,6 @@ export function TopNav({ activeTab, onTabChange }: TopNavProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative text-muted-foreground">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-            <span className="sr-only">Notifications</span>
-          </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted">
@@ -95,8 +88,6 @@ export function TopNav({ activeTab, onTabChange }: TopNavProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => navigate("/profile")}>My Profile</DropdownMenuItem>
-              <DropdownMenuItem>Travel Preferences</DropdownMenuItem>
-              <DropdownMenuItem>Payment Methods</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {

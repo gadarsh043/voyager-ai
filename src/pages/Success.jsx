@@ -33,8 +33,10 @@ export default function Success() {
                 <span className="text-muted-foreground">Total charged</span>
                 <span className="font-semibold tabular-nums">${total.toLocaleString()}</span>
               </div>
-              {quote?.best_card_to_use && (
-                <p className="text-xs text-muted-foreground pt-2">{quote.best_card_to_use}</p>
+              {(quote?.points_optimization?.best_card_to_use ?? quote?.best_card_to_use) && (
+                <p className="text-xs text-muted-foreground pt-2">
+                  {quote?.points_optimization?.best_card_to_use ?? quote?.best_card_to_use}
+                </p>
               )}
             </CardContent>
           </Card>
