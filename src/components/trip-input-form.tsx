@@ -26,7 +26,23 @@ const paceOptions = [
   { value: "fast", label: "Fast", description: "Pack it all in" },
 ]
 
-const interestOptions = ["Food", "Temple", "Nightlife", "Nature"] as const
+const interestOptions = [
+  "Food & Drinks",
+  "Nature",
+  "History",
+  "Museums",
+  "Nightlife",
+  "Shopping",
+  "Hiking",
+  "Beaches",
+  "Art",
+  "Live Music",
+  "Parks",
+  "Sightseeing",
+  "Adventure",
+  "Photography",
+  "Local Markets",
+] as const
 
 export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const { user } = useAuth()
