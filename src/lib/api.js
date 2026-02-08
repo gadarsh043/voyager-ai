@@ -389,6 +389,79 @@ export async function saveSavedPlan(payload) {
   return { id: data.id }
 }
 
+// --- Share / Join trip (Supabase: shared_trips) ---
+const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+function generateInviteCode(length = 6) {
+  const arr = new Uint8Array(length)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(arr)
+  } else {
+    for (let i = 0; i < length; i++) arr[i] = Math.floor(Math.random() * 256)
+  }
+  let s = ''
+  for (let i = 0; i < length; i++) s += INVITE_CODE_CHARS[arr[i] % INVITE_CODE_CHARS.length]
+  return s
+}
+
+/**
+ * Create a shareable trip; returns an invite code others can use to join.
+ * @param {{ origin: string, destination: string, start_date?: string, end_date?: string, options: array }} payload
+ * @returns {{ invite_code: string }}
+ */
+export async function createShareableTrip(payload) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to share a trip')
+  const { origin, destination, start_date, end_date, options } = payload
+  if (!origin || !destination || !Array.isArray(options) || options.length === 0) {
+    throw new Error('origin, destination, and options (array) are required')
+  }
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const invite_code = generateInviteCode(6)
+    const { error } = await supabase.from('shared_trips').insert({
+      invite_code,
+      created_by_user_id: user.id,
+      origin: String(origin).trim(),
+      destination: String(destination).trim(),
+      start_date: start_date || null,
+      end_date: end_date || null,
+      options,
+    })
+    if (!error) return { invite_code }
+    if (error.code !== '23505') throw new Error(error.message) // 23505 = unique violation, retry
+  }
+  throw new Error('Could not generate unique invite code')
+}
+
+/**
+ * Join a trip by invite code; adds the plan to the current user's Existing Plans and returns success.
+ * @param {string} inviteCode
+ * @returns {{ success: true }}
+ */
+export async function joinTripByCode(inviteCode) {
+  const code = String(inviteCode).trim().toUpperCase()
+  if (!code) throw new Error('Invite code is required')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to join a trip')
+  const { data: trip, error: fetchError } = await supabase
+    .from('shared_trips')
+    .select('origin, destination, start_date, end_date, options')
+    .eq('invite_code', code)
+    .maybeSingle()
+  if (fetchError) throw new Error(fetchError.message)
+  if (!trip) throw new Error('Invalid or expired invite code')
+  const { error: insertError } = await supabase.from('user_plans').insert({
+    user_id: user.id,
+    origin: trip.origin,
+    destination: trip.destination,
+    start_date: trip.start_date,
+    end_date: trip.end_date,
+    options: trip.options,
+  })
+  if (insertError) throw new Error(insertError.message)
+  return { success: true }
+}
+
 export async function checkout(itineraryId) {
   if (USE_MOCK) {
     await delay(800)
@@ -417,4 +490,6 @@ export const api = {
   checkout,
   getSavedPlans,
   saveSavedPlan,
+  createShareableTrip,
+  joinTripByCode,
 }

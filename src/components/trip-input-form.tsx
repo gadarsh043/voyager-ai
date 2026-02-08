@@ -84,7 +84,13 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
         } catch {
           // non-blocking: still navigate to plan even if save fails
         }
-        onSubmit({ options: res.options })
+        onSubmit({
+          options: res.options,
+          origin: origin.trim() || 'Unknown',
+          destination: destination.trim() || 'Unknown',
+          start_date: startDate,
+          end_date: endDate,
+        })
       } else {
         sessionStorage.removeItem("itinerary_generating")
         onSubmit()

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
 import { TripInputForm } from '@/components/trip-input-form'
 import { JoinTrip } from '@/components/join-trip'
@@ -10,9 +10,22 @@ import { getTrips, getSavedPlans } from '@/lib/api'
 
 export default function Main() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('new-trip')
   const [trips, setTrips] = useState([])
   const [savedPlans, setSavedPlans] = useState([])
+
+  // When redirected after "Join Trip", open Existing Plans tab
+  useEffect(() => {
+    const openTab = location.state?.openTab
+    if (openTab === 'existing-plans') {
+      setActiveTab('existing-plans')
+      getSavedPlans()
+        .then((r) => setSavedPlans(r.plans || []))
+        .catch(() => setSavedPlans([]))
+      navigate(location.pathname, { replace: true, state: {} }) // clear state
+    }
+  }, [location.state?.openTab, location.pathname, navigate])
 
   useEffect(() => {
     getTrips()
@@ -27,7 +40,19 @@ export default function Main() {
   }, [])
 
   const handleGenerateDone = (result) => {
-    navigate('/plan', result?.options ? { state: { options: result.options } } : {})
+    if (!result?.options) {
+      navigate('/plan', {})
+      return
+    }
+    navigate('/plan', {
+      state: {
+        options: result.options,
+        origin: result.origin,
+        destination: result.destination,
+        start_date: result.start_date,
+        end_date: result.end_date,
+      },
+    })
   }
 
   return (
@@ -72,7 +97,15 @@ export default function Main() {
                   <Card
                     key={plan.id}
                     className="cursor-pointer rounded-2xl border border-border transition-colors hover:bg-muted/50"
-                    onClick={() => navigate('/plan', { state: { options: plan.options } })}
+                    onClick={() => navigate('/plan', {
+                    state: {
+                      options: plan.options,
+                      origin: plan.origin,
+                      destination: plan.destination,
+                      start_date: plan.start_date,
+                      end_date: plan.end_date,
+                    },
+                  })}
                   >
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                       <div className="flex items-center gap-2">

@@ -1,13 +1,15 @@
 "use client"
 
 import { Users, ArrowRight } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { joinTeam } from "@/lib/api"
+import { joinTripByCode } from "@/lib/api"
 
 export function JoinTrip() {
+  const navigate = useNavigate()
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -18,9 +20,11 @@ export function JoinTrip() {
     setError("")
     setLoading(true)
     try {
-      await joinTeam(code.trim())
+      await joinTripByCode(code.trim())
       setSuccess(true)
       setCode("")
+      // Redirect to Existing Plans so the joined trip appears there
+      navigate("/", { state: { openTab: "existing-plans" } })
     } catch (e) {
       setError(e?.message || "Failed to join trip")
     } finally {
@@ -38,7 +42,7 @@ export function JoinTrip() {
           Join an existing trip
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Enter the invite code shared by your travel buddy to collaborate in real time.
+          Enter the invite code shared by your travel buddy. The trip will be added to your Existing Plans.
         </p>
       </div>
 
@@ -50,9 +54,9 @@ export function JoinTrip() {
           <div className="space-y-2">
             <Label className="text-sm font-medium">Invite Code</Label>
             <Input
-              placeholder="e.g. TOKYO-2026-AK3X"
+              placeholder="e.g. ABC12X"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
               className="h-11 text-center text-lg tracking-widest font-mono"
             />
           </div>

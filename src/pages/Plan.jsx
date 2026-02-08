@@ -5,8 +5,16 @@ import { ItineraryTimeline } from '@/components/itinerary-timeline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Sparkles, Check, Plus, Trash2, ExternalLink } from 'lucide-react'
-import { generateItinerary, planWithPicks } from '@/lib/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Sparkles, Check, Plus, Trash2, ExternalLink, Share2, Copy } from 'lucide-react'
+import { generateItinerary, planWithPicks, createShareableTrip } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 function pickId(pick) {
@@ -23,6 +31,11 @@ export default function Plan() {
   const [customUrl, setCustomUrl] = useState('')
   const [customLabel, setCustomLabel] = useState('')
   const [customPlanning, setCustomPlanning] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [shareCode, setShareCode] = useState('')
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareError, setShareError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const stateOptions = location.state?.options
@@ -74,6 +87,40 @@ export default function Plan() {
     } catch (err) {
       setCustomPlanning(false)
     }
+  }
+
+  const planMeta = location.state || {}
+  const planOrigin = planMeta.origin || 'Trip'
+  const planDestination = planMeta.destination || 'Destination'
+
+  const handleShareOpen = async (open) => {
+    setShareOpen(open)
+    if (open && !shareCode) {
+      setShareError('')
+      setShareLoading(true)
+      try {
+        const res = await createShareableTrip({
+          origin: planOrigin,
+          destination: planDestination,
+          start_date: planMeta.start_date,
+          end_date: planMeta.end_date,
+          options,
+        })
+        setShareCode(res.invite_code || '')
+      } catch (err) {
+        setShareError(err?.message || 'Failed to create invite code')
+      } finally {
+        setShareLoading(false)
+      }
+    }
+  }
+
+  const handleCopyCode = () => {
+    if (!shareCode) return
+    navigator.clipboard?.writeText(shareCode).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
   }
 
   return (
@@ -236,7 +283,41 @@ export default function Plan() {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
+          <Dialog open={shareOpen} onOpenChange={handleShareOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2" disabled={loading || options.length === 0}>
+                <Share2 className="h-4 w-4" />
+                Share trip
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Share this trip</DialogTitle>
+                <DialogDescription>
+                  Share the invite code with others. They can enter it under Join Trip and the plan will appear in their Existing Plans.
+                </DialogDescription>
+              </DialogHeader>
+              {shareLoading ? (
+                <p className="py-4 text-sm text-muted-foreground">Creating invite code…</p>
+              ) : shareError ? (
+                <p className="py-2 text-sm text-destructive">{shareError}</p>
+              ) : shareCode ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Invite code</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded-lg border border-border bg-muted/50 px-4 py-3 text-lg font-mono tracking-widest">
+                      {shareCode}
+                    </code>
+                    <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyCode} aria-label="Copy code">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {copied && <p className="text-sm text-emerald-600">Copied to clipboard.</p>}
+                </div>
+              ) : null}
+            </DialogContent>
+          </Dialog>
           <Button className="gap-2" onClick={handleContinueToQuote}>
             Continue to Quote
           </Button>
