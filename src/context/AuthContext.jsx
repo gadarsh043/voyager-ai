@@ -71,6 +71,7 @@ export function AuthProvider({ children }) {
         login,
         loginWithGoogle: auth.signInWithGoogle,
         logout,
+        refreshUser: load,
       }}
     >
       {children}

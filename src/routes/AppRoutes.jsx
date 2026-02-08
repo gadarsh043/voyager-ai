@@ -6,6 +6,7 @@ import Main from '../pages/Main'
 import Plan from '../pages/Plan'
 import Quote from '../pages/Quote'
 import Success from '../pages/Success'
+import Profile from '../pages/Profile'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -27,6 +28,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
       <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
       <Route path="/" element={<ProtectedRoute><Main /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/plan" element={<ProtectedRoute><Plan /></ProtectedRoute>} />
       <Route path="/quote" element={<ProtectedRoute><Quote /></ProtectedRoute>} />
       <Route path="/success" element={<ProtectedRoute><Success /></ProtectedRoute>} />

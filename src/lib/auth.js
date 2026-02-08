@@ -86,3 +86,18 @@ export async function signInWithGoogle() {
 export async function signOut() {
   await supabase.auth.signOut()
 }
+
+export async function updateProfile(updates) {
+  const { data: { user: u } } = await supabase.auth.getUser()
+  if (!u) throw new Error('Not signed in')
+
+  const payload = {}
+  if (updates.first_name !== undefined) payload.first_name = updates.first_name
+  if (updates.last_name !== undefined) payload.last_name = updates.last_name
+  if (updates.avatar_url !== undefined) payload.avatar_url = updates.avatar_url || null
+  if (updates.preferences !== undefined) payload.preferences = Array.isArray(updates.preferences) ? updates.preferences : []
+
+  const { data, error } = await supabase.from('users').update(payload).eq('id', u.id).select().single()
+  if (error) throw error
+  return toAppUser(data)
+}

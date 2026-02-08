@@ -2,7 +2,7 @@
 
 import { useNavigate } from "react-router-dom"
 import { Compass, Users, FolderOpen, PlusCircle, ChevronDown, Bell } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,6 +80,9 @@ export function TopNav({ activeTab, onTabChange }: TopNavProps) {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted">
                 <Avatar className="h-8 w-8">
+                  {user?.avatar_url ? (
+                    <AvatarImage src={user.avatar_url} alt="" className="object-cover" />
+                  ) : null}
                   <AvatarFallback className="bg-primary text-xs text-primary-foreground font-semibold">
                     {initials}
                   </AvatarFallback>
@@ -91,7 +94,7 @@ export function TopNav({ activeTab, onTabChange }: TopNavProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>My Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/profile")}>My Profile</DropdownMenuItem>
               <DropdownMenuItem>Travel Preferences</DropdownMenuItem>
               <DropdownMenuItem>Payment Methods</DropdownMenuItem>
               <DropdownMenuSeparator />
