@@ -355,7 +355,10 @@ export async function generateItinerary(params) {
   const url = `${ITINERARY_API_BASE}/itinerary/generate`
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
     body: JSON.stringify(params ?? {}),
   })
   if (!res.ok) {
@@ -387,7 +390,10 @@ export async function planWithPicks(payload) {
   const url = `${ITINERARY_API_BASE}/itinerary/plan-with-picks`
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
     body: JSON.stringify(payload ?? {}),
   })
   if (!res.ok) {
@@ -418,7 +424,10 @@ export async function getQuote(option) {
   const url = `${ITINERARY_API_BASE}/itinerary/quote`
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
     body: JSON.stringify({ option: option || {} }),
   })
   if (!res.ok) {
@@ -658,7 +667,10 @@ export async function generateTripDocument(params) {
     const url = `${ITINERARY_API_BASE}/itinerary/trip-document`
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+      },
       body: JSON.stringify({ option: option || {}, quote: quote || {}, origin: origin || '', destination: destination || '' }),
     })
     if (!res.ok) throw new Error(await res.text() || 'Trip document API error')
