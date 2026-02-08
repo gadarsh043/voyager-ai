@@ -31,6 +31,7 @@ export default function Plan() {
   const [customUrl, setCustomUrl] = useState('')
   const [customLabel, setCustomLabel] = useState('')
   const [customPlanning, setCustomPlanning] = useState(false)
+  const [customPlanError, setCustomPlanError] = useState(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [shareCode, setShareCode] = useState('')
   const [shareLoading, setShareLoading] = useState(false)
@@ -90,11 +91,29 @@ export default function Plan() {
 
   const handleGetAIPlanAndQuote = async () => {
     if (picks.length === 0) return
+    setCustomPlanError(null)
     setCustomPlanning(true)
     try {
-      const res = await planWithPicks({ picks: picks.map((p) => ({ label: p.label, google_maps_url: p.google_maps_url })) })
-      navigate('/quote', { state: { selectedItineraryId: res?.option_id || 'custom_from_picks', selectedOption: res?.option } })
+      const planMeta = location.state || {}
+      const res = await planWithPicks({
+        picks: picks.map((p) => ({ label: p.label, google_maps_url: p.google_maps_url })),
+        origin: planMeta.origin,
+        destination: planMeta.destination,
+        start_date: planMeta.start_date,
+        end_date: planMeta.end_date,
+      })
+      navigate('/quote', {
+        state: {
+          selectedItineraryId: res.option_id,
+          selectedOption: res.option,
+          user_plan_id: planMeta.user_plan_id,
+          origin: planMeta.origin,
+          destination: planMeta.destination,
+        },
+      })
     } catch (err) {
+      setCustomPlanError(err?.message || 'Failed to generate plan from picks')
+    } finally {
       setCustomPlanning(false)
     }
   }
@@ -278,14 +297,26 @@ export default function Plan() {
             </ul>
           )}
 
+          {customPlanError && (
+            <p className="mb-4 text-sm text-destructive">{customPlanError}</p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <Button
               className="gap-2"
               disabled={picks.length === 0 || customPlanning}
               onClick={handleGetAIPlanAndQuote}
             >
-              <Sparkles className="h-4 w-4" />
-              {customPlanning ? 'Planning…' : 'Get AI plan & quote'}
+              {customPlanning ? (
+                <>
+                  <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                  Generating plan…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Get AI plan & quote
+                </>
+              )}
             </Button>
             <span className="text-sm text-muted-foreground">
               {picks.length === 0 ? 'Add at least one place to use this.' : `Using ${picks.length} place(s).`}

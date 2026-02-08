@@ -378,16 +378,30 @@ export async function customiseItinerary(id, payload) {
 }
 
 /**
- * Request AI to build a custom itinerary from user's picks (selected activities + custom Google links) and get quote.
- * @param {{ picks: Array<{ label: string, google_maps_url?: string }> }} payload
- * @returns {{ option_id: string, option?: object }} option_id for quote page
+ * Build a full timeline from user's picks (selected activities + custom Google links). Same backend family as /itinerary/generate.
+ * No mock: calls ITINERARY_API_BASE. Returns one option so user can go to Quote and complete the flow.
+ * @param {{ picks: Array<{ label: string, google_maps_url?: string }>, origin?: string, destination?: string, start_date?: string, end_date?: string }} payload
+ * @returns {{ option_id: string, option: object }} option_id and full option (same shape as /itinerary/generate) for quote flow
  */
 export async function planWithPicks(payload) {
-  if (USE_MOCK) {
-    await delay(2000)
-    return { option_id: 'custom_from_picks', option: mockItineraryOptions[0] }
+  const url = `${ITINERARY_API_BASE}/itinerary/plan-with-picks`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Plan-with-picks API error ${res.status}`)
   }
-  return request('POST', '/itinerary/plan-with-picks', payload)
+  const data = await res.json()
+  if (!data || !data.option_id) {
+    throw new Error('Invalid response: expected { option_id, option }')
+  }
+  if (!data.option || typeof data.option !== 'object') {
+    throw new Error('Invalid response: option (timeline) is required')
+  }
+  return { option_id: data.option_id, option: data.option }
 }
 
 /**
