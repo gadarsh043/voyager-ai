@@ -12,9 +12,10 @@ import { Separator } from "@/components/ui/separator"
 interface CheckoutSidebarProps {
   selectedPlanPrice: number | null
   onBook?: () => void
+  bookingInProgress?: boolean
 }
 
-export function CheckoutSidebar({ selectedPlanPrice, onBook }: CheckoutSidebarProps) {
+export function CheckoutSidebar({ selectedPlanPrice, onBook, bookingInProgress }: CheckoutSidebarProps) {
   const platformFee = 15
   const subtotal = selectedPlanPrice ?? 0
   const total = subtotal + platformFee
@@ -67,9 +68,19 @@ export function CheckoutSidebar({ selectedPlanPrice, onBook }: CheckoutSidebarPr
             className="mt-4 h-12 w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
             size="lg"
             onClick={onBook}
+            disabled={bookingInProgress}
           >
-            <Zap className="h-4 w-4" />
-            Single-Shot Book
+            {bookingInProgress ? (
+              <>
+                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                Booking…
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4" />
+                Single-Shot Book
+              </>
+            )}
           </Button>
 
           <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">

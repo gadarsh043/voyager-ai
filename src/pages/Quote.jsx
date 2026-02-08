@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
 import { CheckoutSidebar } from '@/components/checkout-sidebar'
-import { getQuote } from '@/lib/api'
+import { getQuote, generateTripDocument, createBooking } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Plane, Building2, MapPin, TrendingDown, CreditCard } from 'lucide-react'
 
@@ -11,9 +11,14 @@ export default function Quote() {
   const location = useLocation()
   const selectedOption = location.state?.selectedOption
   const selectedId = location.state?.selectedItineraryId
+  const userPlanId = location.state?.user_plan_id
+  const origin = location.state?.origin
+  const destination = location.state?.destination
   const [quote, setQuote] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [bookingInProgress, setBookingInProgress] = useState(false)
+  const [bookingError, setBookingError] = useState(null)
 
   useEffect(() => {
     if (!selectedOption) {
@@ -36,8 +41,27 @@ export default function Quote() {
   const bestCard = quote?.points_optimization?.best_card_to_use ?? quote?.best_card_to_use
   const potentialPoints = quote?.points_optimization?.potential_points_earned ?? quote?.potential_points_earned
 
-  const handleSingleShotBook = () => {
-    navigate('/success', { state: { quote, selectedPlanPrice } })
+  const handleSingleShotBook = async () => {
+    if (!selectedOption || !quote) return
+    setBookingError(null)
+    setBookingInProgress(true)
+    try {
+      const dp = selectedOption?.daily_plan || {}
+      const inferredOrigin = origin || dp.flight_from_source?.from_location || dp.flight_to_origin?.to_location || ''
+      const inferredDestination = destination || dp.flight_from_source?.to_location || dp.flight_to_origin?.from_location || ''
+      const { content } = await generateTripDocument({
+        option: selectedOption,
+        quote,
+        origin: inferredOrigin,
+        destination: inferredDestination,
+      })
+      const { booking_id } = await createBooking({ user_plan_id: userPlanId || undefined, content })
+      navigate('/success', { state: { booking_id } })
+    } catch (e) {
+      setBookingError(e?.message || 'Booking failed')
+    } finally {
+      setBookingInProgress(false)
+    }
   }
 
   if (!selectedOption && !loading) {
@@ -217,8 +241,15 @@ export default function Quote() {
                 </>
               )}
             </div>
-            <div>
-              <CheckoutSidebar selectedPlanPrice={selectedPlanPrice} onBook={handleSingleShotBook} />
+            <div className="space-y-2">
+              {bookingError && (
+                <p className="text-sm text-destructive">{bookingError}</p>
+              )}
+              <CheckoutSidebar
+                selectedPlanPrice={selectedPlanPrice}
+                onBook={handleSingleShotBook}
+                bookingInProgress={bookingInProgress}
+              />
             </div>
           </div>
         )}

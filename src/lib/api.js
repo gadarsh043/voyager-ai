@@ -238,40 +238,67 @@ const mockItineraryOptions = [
   },
 ]
 
-// In-depth quote: breakdown by category + points optimization (backend can analyze option and return this shape)
-const DEFAULT_MOCK_QUOTE = {
-  subtotal: 2840,
-  platform_fee: 15,
-  total: 2855,
-  per_person: 1427.5,
-  breakdown: {
-    flights: [
-      { description: 'Outbound: SFO → NRT (economy)', amount: 720 },
-      { description: 'Return: NRT → SFO (economy)', amount: 680 },
-    ],
-    hotels: [
-      { description: 'Aman Tokyo, 3 nights', amount: 980 },
-    ],
-    activities: [
-      { description: 'Tsukiji market & TeamLab Borderless', amount: 120 },
-      { description: 'Mt. Fuji day trip', amount: 180 },
-      { description: 'Local transport & dining', amount: 160 },
-    ],
-  },
-  points_optimization: {
-    best_card_to_use: 'Amex Gold (4x on Dining/Flights)',
-    potential_points_earned: 4800,
-    suggestions: [
-      'Book flights with Amex Platinum for 5x points; use Amex Gold for dining and groceries (4x).',
-      'Transfer Chase Ultimate Rewards to United or Hyatt for better redemption value on this itinerary.',
-      'Consider paying hotel with Chase Sapphire Reserve for 3x travel and primary rental car coverage.',
-    ],
-    transfer_partners: ['Chase → United, Hyatt', 'Amex → Delta, Marriott'],
-    redemption_tips: [
-      'United MileagePlus: good for SFO–NRT if saver space opens; check 30 days out.',
-      'Hyatt: redeem for Aman Tokyo if points availability (high value per point).',
-    ],
-  },
+// Build quote breakdown from the selected option so mock quote matches the plan (not fixed Tokyo data)
+function buildQuoteFromOption(option) {
+  const cost = option?.total_estimated_cost ?? 2840
+  const platform_fee = 15
+  const subtotal = cost
+  const total = subtotal + platform_fee
+  const dp = option?.daily_plan || {}
+  // Allocate cost roughly: flights 45%, hotels 35%, activities 20%
+  const flightTotal = Math.round(cost * 0.45)
+  const hotelTotal = Math.round(cost * 0.35)
+  const activityTotal = cost - flightTotal - hotelTotal
+  const flights = []
+  if (dp.flight_from_source) {
+    const from = dp.flight_from_source.from_location || 'Origin'
+    const to = dp.flight_from_source.to_location || 'Destination'
+    flights.push({ description: `Outbound: ${from} → ${to}`, amount: Math.round(flightTotal / 2) })
+  }
+  if (dp.flight_to_origin) {
+    const from = dp.flight_to_origin.from_location || 'Destination'
+    const to = dp.flight_to_origin.to_location || 'Origin'
+    flights.push({ description: `Return: ${from} → ${to}`, amount: flightTotal - (flights[0]?.amount ?? 0) })
+  }
+  if (flights.length === 0 && flightTotal > 0) flights.push({ description: 'Flights', amount: flightTotal })
+  const hotelList = dp.hotel_stay || []
+  const hotels = hotelList.length
+    ? hotelList.map((h, i) => {
+        const each = Math.round(hotelTotal / hotelList.length)
+        const amount = i < hotelList.length - 1 ? each : hotelTotal - each * (hotelList.length - 1)
+        return {
+          description: `${h.name}${h.check_in || h.check_out ? `, ${[h.check_in, h.check_out].filter(Boolean).join(' – ')}` : ''}`.trim(),
+          amount,
+        }
+      })
+    : hotelTotal > 0 ? [{ description: 'Accommodation', amount: hotelTotal }] : []
+  const activities = []
+  if (dp.days?.length && activityTotal > 0) {
+    const perDay = Math.round(activityTotal / dp.days.length)
+    dp.days.forEach((d, i) => {
+      const dayLabel = d.activities?.length ? d.activities.map((a) => a.start_from || a.name || 'Activity').slice(0, 2).join(', ') : `Day ${d.day}`
+      activities.push({ description: dayLabel || `Day ${d.day} activities`, amount: i < dp.days.length - 1 ? perDay : activityTotal - perDay * (dp.days.length - 1) })
+    })
+  }
+  if (activities.length === 0 && activityTotal > 0) activities.push({ description: 'Activities & transport', amount: activityTotal })
+  const potentialPoints = Math.round(cost * 1.5)
+  return {
+    subtotal,
+    platform_fee,
+    total,
+    per_person: (total / 2).toFixed(2),
+    breakdown: { flights, hotels, activities },
+    points_optimization: {
+      best_card_to_use: 'Use a travel rewards card (e.g. Amex Gold 4x on flights/dining) for this plan.',
+      potential_points_earned: potentialPoints,
+      suggestions: [
+        `Book this itinerary with a card that earns bonus on travel to earn ~${potentialPoints.toLocaleString()} points.`,
+        'Transfer points to airline or hotel partners for best redemption value.',
+      ],
+      transfer_partners: ['Chase → United, Hyatt', 'Amex → Delta, Marriott'],
+      redemption_tips: ['Check saver award space 30 days out for flights.', 'Hotel points often give strong value for this trip.'],
+    },
+  }
 }
 
 async function request(method, path, body) {
@@ -372,18 +399,7 @@ export async function planWithPicks(payload) {
 export async function getQuote(option) {
   if (USE_MOCK) {
     await delay(600)
-    const cost = option?.total_estimated_cost ?? 2840
-    const subtotal = cost
-    const platform_fee = 15
-    const total = subtotal + platform_fee
-    return {
-      subtotal,
-      platform_fee,
-      total,
-      per_person: (total / 2).toFixed(2),
-      breakdown: DEFAULT_MOCK_QUOTE.breakdown,
-      points_optimization: DEFAULT_MOCK_QUOTE.points_optimization,
-    }
+    return buildQuoteFromOption(option)
   }
   const url = `${ITINERARY_API_BASE}/itinerary/quote`
   const res = await fetch(url, {
@@ -523,10 +539,181 @@ export async function checkout(itineraryId) {
       booking_id: 'book_1',
       pdf_url: '#',
       itinerary_summary: mockItineraryOptions[1],
-      bill_summary: { subtotal: DEFAULT_MOCK_QUOTE.subtotal, platform_fee: DEFAULT_MOCK_QUOTE.platform_fee, total: DEFAULT_MOCK_QUOTE.total },
+      bill_summary: { subtotal: 2840, platform_fee: 15, total: 2855 },
     }
   }
   return request('POST', `/itinerary/${itineraryId}/checkout`)
+}
+
+// --- Trip document & bookings (one AI call for document; store in Supabase) ---
+function buildTripDocumentContent(option, quote, origin = 'Origin', destination = 'Destination') {
+  const dp = option?.daily_plan || {}
+  const po = quote?.points_optimization || {}
+  const lines = []
+  lines.push('TRIP ITINERARY – DETAIL')
+  lines.push('')
+  lines.push(`${origin} → ${destination}`)
+  lines.push(`Plan: ${option?.label || 'Your itinerary'}`)
+  lines.push('')
+  if (dp.flight_from_source) {
+    lines.push('OUTBOUND FLIGHT')
+    lines.push(`${dp.flight_from_source.from_location || ''} → ${dp.flight_from_source.to_location || ''}`)
+    lines.push(`Dep: ${dp.flight_from_source.start_time || ''} | Arrive by: ${dp.flight_from_source.reach_by || ''}`)
+    lines.push('')
+  }
+  if (dp.hotel_stay?.length) {
+    lines.push('HOTELS')
+    dp.hotel_stay.forEach((h) => {
+      lines.push(`• ${h.name} | Check-in: ${h.check_in} | Check-out: ${h.check_out}`)
+    })
+    lines.push('')
+  }
+  if (dp.days?.length) {
+    lines.push('DAILY ACTIVITIES')
+    dp.days.forEach((d) => {
+      lines.push(`Day ${d.day}`)
+      ;(d.activities || []).forEach((a) => {
+        lines.push(`  • ${a.start_from || ''} ${a.start_time || ''} – ${a.time_to_spend || ''} ${a.name || ''}`.trim())
+      })
+      lines.push('')
+    })
+  }
+  if (dp.flight_to_origin) {
+    lines.push('RETURN FLIGHT')
+    lines.push(`${dp.flight_to_origin.from_location || ''} → ${dp.flight_to_origin.to_location || ''}`)
+    lines.push(`Dep: ${dp.flight_to_origin.start_time || ''} | Arrive by: ${dp.flight_to_origin.reach_by || ''}`)
+    lines.push('')
+  }
+  lines.push('---')
+  lines.push('SUGGESTIONS')
+  lines.push('')
+  ;(po.suggestions || []).forEach((s) => lines.push(`• ${s}`))
+  if (po.redemption_tips?.length) {
+    lines.push('')
+    lines.push('Redemption tips:')
+    po.redemption_tips.forEach((t) => lines.push(`• ${t}`))
+  }
+  lines.push('')
+  lines.push('---')
+  lines.push('CURRENCY USAGE')
+  lines.push('')
+  lines.push('• Local currency: Carry some cash for markets and small vendors.')
+  lines.push('• Card widely accepted; notify your bank before travel.')
+  lines.push('• ATMs at airport and major areas; check fee with your bank.')
+  lines.push('')
+  lines.push('---')
+  lines.push('MOBILE PLAN')
+  lines.push('')
+  lines.push('• Enable roaming or buy a local eSIM/data plan for maps and bookings.')
+  lines.push('• Save offline maps and key addresses before you go.')
+  lines.push('')
+  lines.push('---')
+  lines.push('CARD BENEFITS')
+  lines.push('')
+  lines.push(`Best card for this trip: ${po.best_card_to_use || 'Use a travel rewards card.'}`)
+  if (po.potential_points_earned != null) {
+    lines.push(`Potential points: ${po.potential_points_earned.toLocaleString()}`)
+  }
+  if (po.transfer_partners?.length) {
+    lines.push('Transfer partners: ' + (Array.isArray(po.transfer_partners) ? po.transfer_partners.join('; ') : po.transfer_partners))
+  }
+  lines.push('')
+  lines.push('---')
+  lines.push('LOCAL LANGUAGE CHEAT SHEET')
+  lines.push('')
+  lines.push('Hello / Thank you / Please / Yes / No / Where is…? / How much?')
+  lines.push('(Customize per destination in your PDF.)')
+  return lines.join('\n')
+}
+
+/**
+ * Generate full trip document (itinerary, suggestions, currency, mobile, card, language).
+ * Uses AI backend when VITE_ITINERARY_API_BASE is set; otherwise uses built-in mock (no extra AI calls).
+ * @param {{ option: object, quote: object, origin?: string, destination?: string }} params
+ * @returns {Promise<{ content: string }>}
+ */
+export async function generateTripDocument(params) {
+  const { option, quote, origin, destination } = params || {}
+  const useBackend = ITINERARY_API_BASE && ITINERARY_API_BASE !== ''
+  if (useBackend) {
+    const url = `${ITINERARY_API_BASE}/itinerary/trip-document`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ option: option || {}, quote: quote || {}, origin: origin || '', destination: destination || '' }),
+    })
+    if (!res.ok) throw new Error(await res.text() || 'Trip document API error')
+    return res.json()
+  }
+  await delay(800)
+  return { content: buildTripDocumentContent(option, quote, origin, destination) }
+}
+
+/**
+ * Create a booking: store trip document content in Supabase and link to optional user_plan_id.
+ * @param {{ user_plan_id?: string, content: string }} params
+ * @returns {Promise<{ booking_id: string, trip_document_id: string }>}
+ */
+export async function createBooking(params) {
+  const { user_plan_id, content } = params || {}
+  if (!content) throw new Error('Document content is required')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to book')
+  const { data: docRow, error: docErr } = await supabase
+    .from('trip_documents')
+    .insert({ user_id: user.id, content })
+    .select('id')
+    .single()
+  if (docErr) throw new Error(docErr.message)
+  const { data: bookRow, error: bookErr } = await supabase
+    .from('bookings')
+    .insert({ user_id: user.id, user_plan_id: user_plan_id || null, trip_document_id: docRow.id })
+    .select('id')
+    .single()
+  if (bookErr) throw new Error(bookErr.message)
+  return { booking_id: bookRow.id, trip_document_id: docRow.id }
+}
+
+/**
+ * Fetch a single booking with its trip document content.
+ * @param {string} bookingId
+ * @returns {Promise<{ id: string, user_plan_id: string|null, trip_document_id: string, content: string, created_at: string }>}
+ */
+export async function getBooking(bookingId) {
+  if (!bookingId) throw new Error('Booking ID required')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in')
+  const { data: booking, error: bookErr } = await supabase
+    .from('bookings')
+    .select('id, user_plan_id, trip_document_id, created_at')
+    .eq('id', bookingId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (bookErr) throw new Error(bookErr.message)
+  if (!booking) return null
+  const { data: doc, error: docErr } = await supabase
+    .from('trip_documents')
+    .select('content')
+    .eq('id', booking.trip_document_id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+  if (docErr || !doc) return null
+  return { ...booking, content: doc.content }
+}
+
+/**
+ * Fetch all bookings for the current user (to show "Booked" on plans).
+ * @returns {Promise<{ bookings: Array<{ id: string, user_plan_id: string|null }> }>}
+ */
+export async function getBookingsForUser() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { bookings: [] }
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id, user_plan_id')
+    .eq('user_id', user.id)
+  if (error) throw new Error(error.message)
+  return { bookings: data || [] }
 }
 
 export const api = {
@@ -546,4 +733,8 @@ export const api = {
   saveSavedPlan,
   createShareableTrip,
   joinTripByCode,
+  generateTripDocument,
+  createBooking,
+  getBooking,
+  getBookingsForUser,
 }

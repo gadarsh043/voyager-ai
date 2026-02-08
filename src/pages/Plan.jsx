@@ -77,7 +77,15 @@ export default function Plan() {
   const handleContinueToQuote = () => {
     const selected = options.find((o) => o.id === (selectedId || options[0]?.id)) || options[0]
     if (!selected) return
-    navigate('/quote', { state: { selectedItineraryId: selected.id, selectedOption: selected } })
+    navigate('/quote', {
+      state: {
+        selectedItineraryId: selected.id,
+        selectedOption: selected,
+        user_plan_id: location.state?.user_plan_id,
+        origin: location.state?.origin,
+        destination: location.state?.destination,
+      },
+    })
   }
 
   const handleGetAIPlanAndQuote = async () => {

@@ -6,7 +6,8 @@ import { JoinTrip } from '@/components/join-trip'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { MapPin, Calendar } from 'lucide-react'
-import { getTrips, getSavedPlans } from '@/lib/api'
+import { getTrips, getSavedPlans, getBookingsForUser } from '@/lib/api'
+import { Badge } from '@/components/ui/badge'
 
 export default function Main() {
   const navigate = useNavigate()
@@ -14,6 +15,11 @@ export default function Main() {
   const [activeTab, setActiveTab] = useState('new-trip')
   const [trips, setTrips] = useState([])
   const [savedPlans, setSavedPlans] = useState([])
+  const [bookings, setBookings] = useState([])
+  const bookingIdsByPlanId = (bookings || []).reduce((acc, b) => {
+    if (b.user_plan_id) acc[b.user_plan_id] = b.id
+    return acc
+  }, {})
 
   // When redirected after "Join Trip", open Existing Plans tab
   useEffect(() => {
@@ -37,6 +43,12 @@ export default function Main() {
     getSavedPlans()
       .then((r) => setSavedPlans(r.plans || []))
       .catch(() => setSavedPlans([]))
+  }, [])
+
+  useEffect(() => {
+    getBookingsForUser()
+      .then((r) => setBookings(r.bookings || []))
+      .catch(() => setBookings([]))
   }, [])
 
   const handleGenerateDone = (result) => {
@@ -97,15 +109,23 @@ export default function Main() {
                   <Card
                     key={plan.id}
                     className="cursor-pointer rounded-2xl border border-border transition-colors hover:bg-muted/50"
-                    onClick={() => navigate('/plan', {
-                    state: {
-                      options: plan.options,
-                      origin: plan.origin,
-                      destination: plan.destination,
-                      start_date: plan.start_date,
-                      end_date: plan.end_date,
-                    },
-                  })}
+                    onClick={() => {
+                    const hasBooking = bookingIdsByPlanId[plan.id]
+                    if (hasBooking) {
+                      navigate(`/booking/${hasBooking}`)
+                    } else {
+                      navigate('/plan', {
+                        state: {
+                          options: plan.options,
+                          origin: plan.origin,
+                          destination: plan.destination,
+                          start_date: plan.start_date,
+                          end_date: plan.end_date,
+                          user_plan_id: plan.id,
+                        },
+                      })
+                    }
+                  }}
                   >
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                       <div className="flex items-center gap-2">
@@ -114,6 +134,9 @@ export default function Main() {
                           {plan.origin} → {plan.destination}
                         </span>
                       </div>
+                      {bookingIdsByPlanId[plan.id] && (
+                        <Badge variant="default" className="shrink-0">Booked</Badge>
+                      )}
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {(plan.start_date || plan.end_date) && (
