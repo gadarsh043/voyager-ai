@@ -4,8 +4,6 @@ import * as auth from '@/lib/auth'
 
 const AuthContext = createContext(null)
 
-const MAX_LOAD_MS = 1200
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -14,6 +12,7 @@ export function AuthProvider({ children }) {
   const load = useCallback(async () => {
     if (loadingRef.current) return
     loadingRef.current = true
+    setLoading(true)
     try {
       const session = await auth.getSession()
       if (!session?.user) {
@@ -32,17 +31,12 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), MAX_LOAD_MS)
     load()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
       else if (event === 'SIGNED_OUT') setUser(null)
-      setLoading(false)
     })
-    return () => {
-      clearTimeout(t)
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [load])
 
   const register = useCallback(async (data) => {
