@@ -20,11 +20,19 @@ export function AuthProvider({ children }) {
         setLoading(false)
         return
       }
-      const profile = await auth.getProfile()
-      setUser(profile ?? auth.profileFromAuth(session.user))
+      try {
+        const profile = await auth.getProfile()
+        setUser(profile ?? auth.profileFromAuth(session.user))
+      } catch {
+        // Session valid but profile fetch failed (e.g. RLS) – use OAuth metadata so user stays signed in
+        setUser(auth.profileFromAuth(session.user))
+      }
+      // Remove OAuth tokens from URL so the bar shows a clean path
+      if (typeof window !== 'undefined' && window.location.hash?.includes('access_token=')) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
     } catch {
       setUser(null)
-      // Clear invalid/expired tokens so we don't keep retrying refresh
       supabase.auth.signOut().catch(() => {})
     } finally {
       setLoading(false)
@@ -34,11 +42,17 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     load()
+    // OAuth redirect: Supabase may still be parsing the hash. Retry once after a short delay.
+    const hasOAuthHash = typeof window !== 'undefined' && window.location.hash?.includes('access_token=')
+    const t = hasOAuthHash ? window.setTimeout(() => load(), 100) : null
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
       else if (event === 'SIGNED_OUT') setUser(null)
     })
-    return () => subscription.unsubscribe()
+    return () => {
+      if (t) clearTimeout(t)
+      subscription.unsubscribe()
+    }
   }, [load])
 
   const register = useCallback(async (data) => {
