@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
 import { ItineraryTimeline } from '@/components/itinerary-timeline'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ function pickId(pick) {
 
 export default function Plan() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [options, setOptions] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState(null)
@@ -24,6 +25,13 @@ export default function Plan() {
   const [customPlanning, setCustomPlanning] = useState(false)
 
   useEffect(() => {
+    const stateOptions = location.state?.options
+    if (Array.isArray(stateOptions) && stateOptions.length > 0) {
+      setOptions(stateOptions)
+      setSelectedId((prev) => (prev || stateOptions[0]?.id) ?? null)
+      setLoading(false)
+      return
+    }
     generateItinerary({})
       .then((res) => {
         if (res?.options && Array.isArray(res.options)) {
@@ -31,8 +39,9 @@ export default function Plan() {
           setSelectedId((prev) => (prev || res.options[0]?.id) ?? null)
         }
       })
+      .catch(() => setOptions([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [location.state?.options])
 
   const addPick = useCallback((pick) => {
     const id = pickId(pick)
@@ -82,7 +91,13 @@ export default function Plan() {
         </div>
 
         {loading ? (
-          <div className="mb-8 flex justify-center py-12 text-muted-foreground">Loading plans…</div>
+          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10">
+              <span className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+            </div>
+            <p className="text-lg font-medium text-foreground">Loading plans…</p>
+            <p className="text-sm text-muted-foreground">Fetching your itineraries</p>
+          </div>
         ) : (
           <div className="mb-8 grid gap-6 md:grid-cols-3 md:items-stretch">
             {options.map((option, index) => {

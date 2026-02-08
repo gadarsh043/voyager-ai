@@ -20,8 +20,8 @@ export default function Main() {
       .catch(() => setTrips([]))
   }, [])
 
-  const handleGenerateDone = () => {
-    navigate('/plan')
+  const handleGenerateDone = (result) => {
+    navigate('/plan', result?.options ? { state: { options: result.options } } : {})
   }
 
   return (

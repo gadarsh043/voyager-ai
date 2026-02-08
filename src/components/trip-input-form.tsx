@@ -13,11 +13,12 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 import { INTEREST_OPTIONS } from "@/lib/constants"
+import { generateItinerary } from "@/lib/api"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
 interface TripInputFormProps {
-  onSubmit: () => void
+  onSubmit: (result?: { options: unknown[] }) => void
 }
 
 const paceOptions = [
@@ -46,14 +47,53 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const [disability, setDisability] = useState(false)
   const [dietary, setDietary] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    setGenerateError(null)
     setIsGenerating(true)
-    setTimeout(() => {
+    try {
+      sessionStorage.setItem("itinerary_generating", "1")
+      const startDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
+      const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
+      const res = await generateItinerary({
+        origin: origin.trim() || undefined,
+        destination: destination.trim() || undefined,
+        start_date: startDate,
+        end_date: endDate,
+        budget: budget[0],
+        per_person_budget: perPersonBudget[0],
+        num_persons: numPersons,
+        accommodation_type: accommodationType,
+        pace,
+        preferences: interests,
+        disability,
+        dietary,
+      })
+      if (res?.options?.length) {
+        sessionStorage.removeItem("itinerary_generating")
+        onSubmit({ options: res.options })
+      } else {
+        sessionStorage.removeItem("itinerary_generating")
+        onSubmit()
+      }
+    } catch (err) {
+      sessionStorage.removeItem("itinerary_generating")
+      setGenerateError(err instanceof Error ? err.message : "Failed to generate itineraries")
+    } finally {
+      sessionStorage.removeItem("itinerary_generating")
       setIsGenerating(false)
-      onSubmit()
-    }, 2000)
+    }
   }
+
+  useEffect(() => {
+    if (!isGenerating) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [isGenerating])
 
   const handleToggleInterest = (option: (typeof INTEREST_OPTIONS)[number]) => {
     setInterests((prev) =>
@@ -62,7 +102,25 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="relative mx-auto max-w-3xl">
+      {isGenerating && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background backdrop-blur-sm px-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10">
+            <span className="inline-flex h-9 w-9 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          </div>
+          <div className="max-w-sm space-y-2 text-center">
+            <p className="text-xl font-semibold text-foreground">Generating AI itineraries</p>
+            <p className="text-sm text-muted-foreground">
+              The AI is building your plans. This often takes <strong>1–2 minutes</strong>. Please stay on this page and don’t refresh.
+            </p>
+          </div>
+        </div>
+      )}
+      {generateError && (
+        <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {generateError}
+        </div>
+      )}
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground font-display text-balance">
           Plan your perfect trip

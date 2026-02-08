@@ -10,6 +10,8 @@ import Profile from '../pages/Profile'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
+  const generating = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('itinerary_generating')
+  if (generating) return children
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   if (!user) return <Navigate to="/login" replace />
   return children

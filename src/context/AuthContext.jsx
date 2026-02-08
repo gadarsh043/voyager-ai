@@ -24,6 +24,8 @@ export function AuthProvider({ children }) {
       setUser(profile ?? auth.profileFromAuth(session.user))
     } catch {
       setUser(null)
+      // Clear invalid/expired tokens so we don't keep retrying refresh
+      supabase.auth.signOut().catch(() => {})
     } finally {
       setLoading(false)
       loadingRef.current = false

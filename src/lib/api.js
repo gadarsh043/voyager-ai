@@ -3,6 +3,7 @@
  */
 const USE_MOCK = true
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+const ITINERARY_API_BASE = import.meta.env.VITE_ITINERARY_API_BASE || 'http://127.0.0.1:8000'
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
 
@@ -294,11 +295,21 @@ export async function joinTeam(inviteCode) {
 
 // --- Itinerary ---
 export async function generateItinerary(params) {
-  if (USE_MOCK) {
-    await delay(2000)
-    return { options: mockItineraryOptions }
+  const url = `${ITINERARY_API_BASE}/itinerary/generate`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params ?? {}),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Itinerary API error ${res.status}`)
   }
-  return request('POST', '/itinerary/generate', params)
+  const data = await res.json()
+  if (!data || !Array.isArray(data.options)) {
+    throw new Error('Invalid response: expected { options: [...] }')
+  }
+  return data
 }
 
 export async function customiseItinerary(id, payload) {
