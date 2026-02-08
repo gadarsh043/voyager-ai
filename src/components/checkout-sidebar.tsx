@@ -65,7 +65,7 @@ export function CheckoutSidebar({ selectedPlanPrice, onBook, bookingInProgress }
           </div>
 
           <Button
-            className="mt-4 h-12 w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+            className="mt-4 h-12 min-h-[48px] w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 touch-manipulation"
             size="lg"
             onClick={onBook}
             disabled={bookingInProgress}

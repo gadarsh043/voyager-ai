@@ -62,7 +62,7 @@ export function JoinTrip() {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button
-            className="h-11 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-11 min-h-[44px] w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90 touch-manipulation"
             disabled={!code.trim() || loading}
             onClick={handleJoin}
           >

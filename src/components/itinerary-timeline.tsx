@@ -66,17 +66,17 @@ export function ItineraryTimeline({ option, className, onAddPick }: ItineraryTim
       <div className="relative flex flex-col">
         {/* Outbound flight */}
         {flightOut && (
-          <div className="flex gap-4 pb-4">
-            <div className="flex flex-col items-center">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-primary/10">
+          <div className="flex gap-3 sm:gap-4 pb-3 sm:pb-4">
+            <div className="flex flex-col items-center shrink-0">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-primary/10">
                 <Plane className="h-4 w-4 text-primary" />
               </div>
               <div className="mt-1 w-px flex-1 bg-border" />
             </div>
             <div className="min-w-0 flex-1 pb-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Outbound flight</p>
-              <p className="font-medium text-foreground">{flightOut.from_location || "—"} → destination</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground text-sm sm:text-base break-words">{flightOut.from_location || "—"} → destination</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {formatTime(flightOut.start_time)} → {formatTime(flightOut.reach_by)}
               </p>
             </div>

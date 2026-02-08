@@ -71,7 +71,7 @@ export default function Main() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
         {activeTab === 'new-trip' && (
           <TripInputForm onSubmit={handleGenerateDone} />
         )}
@@ -82,21 +82,21 @@ export default function Main() {
 
         {activeTab === 'existing-plans' && (
           <div className="mx-auto max-w-4xl">
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground text-balance">
+            <div className="mb-6 sm:mb-8 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
                 Existing Plans
               </h1>
-              <p className="mt-2 text-base text-muted-foreground">
-                Saved itineraries. Click a plan to view the 3 options again — no new AI call.
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Saved itineraries. Tap a plan to view the 3 options again — no new AI call.
               </p>
             </div>
             {savedPlans.length === 0 ? (
               <Card className="rounded-2xl border border-border">
-                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
                   <p className="text-muted-foreground">No saved plans yet.</p>
                   <p className="mt-1 text-sm text-muted-foreground">Generate a trip (e.g. Dallas to Houston) and it will be added here.</p>
                   <Button
-                    className="mt-4"
+                    className="mt-4 min-h-[44px]"
                     onClick={() => setActiveTab('new-trip')}
                   >
                     Plan a new trip
@@ -104,11 +104,11 @@ export default function Main() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 {savedPlans.map((plan) => (
                   <Card
                     key={plan.id}
-                    className="cursor-pointer rounded-2xl border border-border transition-colors hover:bg-muted/50"
+                    className="cursor-pointer rounded-2xl border border-border transition-colors hover:bg-muted/50 active:bg-muted/50 touch-manipulation min-h-[44px]"
                     onClick={() => {
                     const hasBooking = bookingIdsByPlanId[plan.id]
                     if (hasBooking) {

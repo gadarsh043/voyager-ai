@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
+import { useIsMobile } from "@/components/ui/use-mobile"
 import { INTEREST_OPTIONS } from "@/lib/constants"
 import { COUNTRY_NAMES } from "@/lib/countries"
 import { generateItinerary, saveSavedPlan } from "@/lib/api"
@@ -30,6 +31,7 @@ const paceOptions = [
 
 export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [origin, setOrigin] = useState("")
   const [destination, setDestination] = useState("")
@@ -139,17 +141,17 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
           {generateError}
         </div>
       )}
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground font-display text-balance">
+      <div className="mb-6 sm:mb-8 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-display text-balance sm:text-3xl">
           Plan your perfect trip
         </h1>
-        <p className="mt-2 text-base text-muted-foreground">
+        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
           Tell us about your travel preferences and our AI will craft personalized itineraries.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm lg:p-8">
-        <div className="grid gap-6 md:grid-cols-2">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 lg:p-8">
+        <div className="grid gap-5 sm:gap-6 md:grid-cols-2">
           {/* From / Origin (city or place) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
@@ -160,7 +162,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               placeholder="e.g. Houston, Dallas, London"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
-              className="h-11"
+              className="h-11 min-h-[44px]"
             />
           </div>
 
@@ -174,7 +176,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               placeholder="e.g. Dallas, New York, Tokyo"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="h-11"
+              className="h-11 min-h-[44px]"
             />
           </div>
 
@@ -194,7 +196,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
                     onClick={() => handleToggleInterest(option)}
                     variant={isSelected ? "default" : "outline"}
                     aria-pressed={isSelected}
-                    className="h-11 px-4"
+                    className="h-11 min-h-[44px] px-4 touch-manipulation"
                   >
                     {option}
                   </Button>
@@ -260,14 +262,14 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 max-w-[min(100vw-2rem,380px)] sm:max-w-none" align="start">
                 <Calendar
                   initialFocus
                   mode="range"
                   defaultMonth={new Date()}
                   selected={dateRange}
                   onSelect={setDateRange}
-                  numberOfMonths={2}
+                  numberOfMonths={isMobile ? 1 : 2}
                 />
               </PopoverContent>
             </Popover>
@@ -345,13 +347,14 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               <Gauge className="h-4 w-4 text-primary" />
               Trip Pace
             </Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {paceOptions.map((option) => (
                 <button
                   key={option.value}
+                  type="button"
                   onClick={() => setPace(option.value)}
                   className={cn(
-                    "flex flex-col items-center gap-1 rounded-xl border-2 px-4 py-3 text-center transition-all",
+                    "flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border-2 px-3 py-3 text-center transition-all touch-manipulation sm:px-4",
                     pace === option.value
                       ? "border-primary bg-accent text-foreground"
                       : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted"
@@ -392,10 +395,10 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
 
         {/* Generate Button */}
         <div className="mt-8">
-          <Button
+            <Button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="h-12 w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-12 min-h-[48px] w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 touch-manipulation"
             size="lg"
           >
             {isGenerating ? (

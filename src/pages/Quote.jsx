@@ -82,10 +82,10 @@ export default function Quote() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Quote &amp; Book</h1>
-          <p className="mt-2 text-muted-foreground">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Quote &amp; Book</h1>
+          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             In-depth quote for your selected plan. Review every place, hotel, flight and points optimization.
           </p>
         </div>
@@ -100,8 +100,8 @@ export default function Quote() {
             {error}
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6 min-w-0">
               {quote && (
                 <>
                   {/* Summary */}
@@ -142,9 +142,9 @@ export default function Quote() {
                             </div>
                             <ul className="space-y-1.5">
                               {quote.breakdown.flights.map((item, i) => (
-                                <li key={i} className="flex justify-between text-sm">
-                                  <span className="text-foreground">{item.description}</span>
-                                  <span className="tabular-nums font-medium">${item.amount?.toLocaleString()}</span>
+                                <li key={i} className="flex justify-between gap-2 text-sm">
+                                  <span className="text-foreground break-words min-w-0">{item.description}</span>
+                                  <span className="tabular-nums font-medium shrink-0">${item.amount?.toLocaleString()}</span>
                                 </li>
                               ))}
                             </ul>
@@ -158,9 +158,9 @@ export default function Quote() {
                             </div>
                             <ul className="space-y-1.5">
                               {quote.breakdown.hotels.map((item, i) => (
-                                <li key={i} className="flex justify-between text-sm">
-                                  <span className="text-foreground">{item.description}</span>
-                                  <span className="tabular-nums font-medium">${item.amount?.toLocaleString()}</span>
+                                <li key={i} className="flex justify-between gap-2 text-sm">
+                                  <span className="text-foreground break-words min-w-0">{item.description}</span>
+                                  <span className="tabular-nums font-medium shrink-0">${item.amount?.toLocaleString()}</span>
                                 </li>
                               ))}
                             </ul>
@@ -174,9 +174,9 @@ export default function Quote() {
                             </div>
                             <ul className="space-y-1.5">
                               {quote.breakdown.activities.map((item, i) => (
-                                <li key={i} className="flex justify-between text-sm">
-                                  <span className="text-foreground">{item.description}</span>
-                                  <span className="tabular-nums font-medium">${item.amount?.toLocaleString()}</span>
+                                <li key={i} className="flex justify-between gap-2 text-sm">
+                                  <span className="text-foreground break-words min-w-0">{item.description}</span>
+                                  <span className="tabular-nums font-medium shrink-0">${item.amount?.toLocaleString()}</span>
                                 </li>
                               ))}
                             </ul>
@@ -241,7 +241,7 @@ export default function Quote() {
                 </>
               )}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 lg:sticky lg:top-20">
               {bookingError && (
                 <p className="text-sm text-destructive">{bookingError}</p>
               )}

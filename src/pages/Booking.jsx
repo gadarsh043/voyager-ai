@@ -58,15 +58,15 @@ export default function Booking() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab="existing-plans" onTabChange={() => navigate('/')} />
 
-      <main className="mx-auto max-w-lg px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Your booked trip</h1>
+      <main className="mx-auto max-w-lg px-4 py-6 sm:py-8">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Your booked trip</h1>
         <p className="mt-2 text-muted-foreground">
           Download your full trip itinerary (itinerary detail, suggestions, currency, mobile plan, card benefits, local language cheat sheet).
         </p>
 
         <div className="mt-8">
           <Button
-            className="w-full gap-2 h-12 text-base font-semibold"
+            className="w-full gap-2 h-12 min-h-[48px] text-base font-semibold touch-manipulation"
             onClick={handleDownloadPdf}
           >
             <Download className="h-5 w-5" />
@@ -82,7 +82,7 @@ export default function Booking() {
           )}
         </div>
 
-        <Button variant="outline" className="mt-8 w-full" onClick={() => navigate('/')}>
+        <Button variant="outline" className="mt-8 w-full min-h-[44px]" onClick={() => navigate('/')}>
           Back to Home
         </Button>
       </main>

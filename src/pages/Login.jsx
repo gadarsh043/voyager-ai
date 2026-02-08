@@ -56,9 +56,9 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6">
       <div className="w-full max-w-sm space-y-5">
-        <h1 className="text-xl font-semibold text-center">Sign in</h1>
+        <h1 className="text-xl font-semibold text-center sm:text-2xl">Sign in</h1>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
@@ -69,7 +69,7 @@ export default function Login() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 h-10"
+              className="mt-1 h-11 min-h-[44px]"
               autoComplete="email"
             />
           </div>
@@ -82,14 +82,14 @@ export default function Login() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-10 pr-10"
+                className="h-11 min-h-[44px] pr-12"
                 autoComplete="current-password"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-foreground"
+                className="absolute right-0 top-0 h-11 w-11 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground touch-manipulation"
                 onClick={() => setShowPassword((p) => !p)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -98,7 +98,7 @@ export default function Login() {
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={loading} className="w-full h-10">
+          <Button type="submit" disabled={loading} className="w-full h-11 min-h-[44px]">
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
@@ -112,7 +112,7 @@ export default function Login() {
           <span className="relative flex justify-center text-xs text-muted-foreground bg-background px-2">Or</span>
         </div>
 
-        <Button variant="outline" className="w-full h-10" onClick={onGoogle} disabled={loading}>
+        <Button variant="outline" className="w-full h-11 min-h-[44px]" onClick={onGoogle} disabled={loading}>
           Continue with Google
         </Button>
       </div>

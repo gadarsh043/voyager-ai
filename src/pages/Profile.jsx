@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { TopNav } from '@/components/top-nav'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -98,8 +99,9 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-xl px-4 py-8">
-        <h1 className="text-2xl font-semibold mb-6">My Profile</h1>
+      <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
+      <div className="mx-auto max-w-xl px-4 py-6 sm:py-8">
+        <h1 className="text-xl font-semibold mb-6 sm:text-2xl">My Profile</h1>
 
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="flex items-center gap-6">
@@ -183,11 +185,11 @@ export default function Profile() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           {saved && <p className="text-sm text-emerald-600">Profile saved.</p>}
 
-          <div className="flex gap-3">
-            <Button type="submit" disabled={loading}>
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            <Button type="submit" disabled={loading} className="min-h-[44px]">
               {loading ? 'Saving...' : 'Save changes'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate('/')}>
+            <Button type="button" variant="outline" onClick={() => navigate('/')} className="min-h-[44px]">
               Back
             </Button>
           </div>

@@ -35,11 +35,11 @@ export default function Success() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
 
-      <main className="mx-auto max-w-lg px-4 py-12 flex flex-col items-center justify-center min-h-[80vh]">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-          <CheckCircle className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+      <main className="mx-auto max-w-lg px-4 py-8 sm:py-12 flex flex-col items-center justify-center min-h-[80vh]">
+        <div className="mx-auto mb-6 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+          <CheckCircle className="h-8 w-8 sm:h-9 sm:w-9 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground text-center">You&apos;re booked!</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground text-center sm:text-3xl">You&apos;re booked!</h1>
         <p className="mt-2 text-muted-foreground text-center">
           Your trip itinerary is saved. Download the full document below (itinerary, suggestions, currency, mobile plan, card benefits, local language cheat sheet).
         </p>
@@ -52,7 +52,7 @@ export default function Success() {
         ) : booking?.content ? (
           <div className="mt-8 w-full space-y-4">
             <Button
-              className="w-full gap-2 h-12 text-base font-semibold"
+              className="w-full gap-2 h-12 min-h-[48px] text-base font-semibold touch-manipulation"
               onClick={handleDownloadPdf}
             >
               <Download className="h-5 w-5" />
@@ -73,7 +73,7 @@ export default function Success() {
 
         <Button
           variant="outline"
-          className="mt-8"
+          className="mt-8 min-h-[44px] w-full sm:w-auto"
           onClick={() => navigate('/')}
         >
           Back to Home

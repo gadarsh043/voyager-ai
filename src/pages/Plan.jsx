@@ -156,12 +156,12 @@ export default function Plan() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground text-balance">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
+        <div className="mb-6 sm:mb-8 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
             Choose or build your itinerary
           </h1>
-          <p className="mt-2 text-base text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground sm:text-base px-1">
             Pick one of the three plans, or select activities and add your own places — then get an AI plan and quote.
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function Plan() {
             <p className="text-sm text-muted-foreground">Fetching your itineraries</p>
           </div>
         ) : (
-          <div className="mb-8 grid gap-6 md:grid-cols-3 md:items-stretch">
+          <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 md:grid-cols-3 md:items-stretch">
             {options.map((option, index) => {
               const isSelected = selectedId === option.id
               return (
@@ -186,7 +186,7 @@ export default function Plan() {
                   onClick={() => setSelectedId(option.id)}
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedId(option.id)}
                   className={cn(
-                    'flex h-full min-h-[440px] flex-col rounded-2xl border-2 bg-card p-5 transition-all hover:shadow-lg cursor-pointer',
+                    'flex h-full min-h-[320px] sm:min-h-[440px] flex-col rounded-2xl border-2 bg-card p-4 sm:p-5 transition-all hover:shadow-lg cursor-pointer touch-manipulation',
                     isSelected ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
                   )}
                 >
@@ -205,12 +205,12 @@ export default function Plan() {
                     </span>
                     <span className="text-sm text-muted-foreground"> estimated</span>
                   </div>
-                  <div className="min-h-0 max-h-[360px] flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-muted/30 p-4">
+                  <div className="min-h-0 max-h-[280px] sm:max-h-[360px] flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-muted/30 p-3 sm:p-4">
                     <ItineraryTimeline option={option} onAddPick={addPick} />
                   </div>
                   <Button
                     variant={isSelected ? 'default' : 'outline'}
-                    className="mt-4 w-full"
+                    className="mt-4 w-full min-h-[44px]"
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedId(option.id)
@@ -224,14 +224,14 @@ export default function Plan() {
           </div>
         )}
 
-        <div className="mb-8 rounded-2xl border border-border bg-card p-6">
-          <h3 className="mb-1 text-lg font-semibold text-foreground">My picks</h3>
+        <div className="mb-6 sm:mb-8 rounded-2xl border border-border bg-card p-4 sm:p-6">
+          <h3 className="mb-1 text-base font-semibold text-foreground sm:text-lg">My picks</h3>
           <p className="mb-4 text-sm text-muted-foreground">
             Add activities from the plans above, or paste Google Maps links for places you like. Then request an AI plan and quote.
           </p>
 
-          <div className="mb-4 flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[200px] space-y-1">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2">
+            <div className="flex-1 min-w-0 space-y-1">
               <Label htmlFor="custom_url" className="text-xs">Google Maps or place URL</Label>
               <Input
                 id="custom_url"
@@ -239,10 +239,10 @@ export default function Plan() {
                 placeholder="https://www.google.com/maps/..."
                 value={customUrl}
                 onChange={(e) => setCustomUrl(e.target.value)}
-                className="h-9"
+                className="h-10 sm:h-9 min-h-[44px]"
               />
             </div>
-            <div className="w-40 space-y-1">
+            <div className="w-full sm:w-40 space-y-1">
               <Label htmlFor="custom_label" className="text-xs">Label (optional)</Label>
               <Input
                 id="custom_label"
@@ -250,11 +250,11 @@ export default function Plan() {
                 placeholder="e.g. My café"
                 value={customLabel}
                 onChange={(e) => setCustomLabel(e.target.value)}
-                className="h-9"
+                className="h-10 sm:h-9 min-h-[44px]"
               />
             </div>
             <div className="flex items-end">
-              <Button type="button" variant="outline" size="sm" className="gap-1 h-9" onClick={addCustomPlace}>
+              <Button type="button" variant="outline" size="sm" className="gap-1 h-10 min-h-[44px] sm:h-9 w-full sm:w-auto" onClick={addCustomPlace}>
                 <Plus className="h-3.5 w-3.5" />
                 Add place
               </Button>
@@ -302,7 +302,7 @@ export default function Plan() {
           )}
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              className="gap-2"
+              className="gap-2 min-h-[44px]"
               disabled={picks.length === 0 || customPlanning}
               onClick={handleGetAIPlanAndQuote}
             >
@@ -324,11 +324,11 @@ export default function Plan() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
+        <div className="mt-6 sm:mt-8 flex flex-col-reverse sm:flex-row flex-wrap items-stretch sm:items-center justify-end gap-3">
           <Dialog open={shareOpen} onOpenChange={handleShareOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2" disabled={loading || options.length === 0}>
-                <Share2 className="h-4 w-4" />
+              <Button variant="outline" className="gap-2 min-h-[44px] w-full sm:w-auto" disabled={loading || options.length === 0}>
+                <Share2 className="h-4 w-4 shrink-0" />
                 Share trip
               </Button>
             </DialogTrigger>
@@ -359,7 +359,7 @@ export default function Plan() {
               ) : null}
             </DialogContent>
           </Dialog>
-          <Button className="gap-2" onClick={handleContinueToQuote}>
+          <Button className="gap-2 min-h-[44px] w-full sm:w-auto" onClick={handleContinueToQuote}>
             Continue to Quote
           </Button>
         </div>

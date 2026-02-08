@@ -80,9 +80,9 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-6 sm:py-8">
       <div className="w-full max-w-sm space-y-5">
-        <h1 className="text-xl font-semibold text-center">Create account</h1>
+        <h1 className="text-xl font-semibold text-center sm:text-2xl">Create account</h1>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -93,7 +93,7 @@ export default function Register() {
                 placeholder="John"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="mt-1 h-10"
+                className="mt-1 h-11 min-h-[44px]"
                 autoComplete="given-name"
               />
             </div>
@@ -104,7 +104,7 @@ export default function Register() {
                 placeholder="Doe"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="mt-1 h-10"
+                className="mt-1 h-11 min-h-[44px]"
                 autoComplete="family-name"
               />
             </div>
@@ -117,7 +117,7 @@ export default function Register() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 h-10"
+              className="mt-1 h-11 min-h-[44px]"
               autoComplete="email"
               maxLength={MAX_EMAIL_LEN}
             />
@@ -131,7 +131,7 @@ export default function Register() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-10 pr-10"
+                className="h-11 min-h-[44px] pr-12"
                 autoComplete="new-password"
                 minLength={MIN_PASSWORD}
               />
@@ -139,7 +139,7 @@ export default function Register() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-10 w-10 text-muted-foreground hover:text-foreground"
+                className="absolute right-0 top-0 h-11 w-11 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-foreground touch-manipulation"
                 onClick={() => setShowPassword((p) => !p)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -148,7 +148,7 @@ export default function Register() {
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" disabled={loading} className="w-full h-10">
+          <Button type="submit" disabled={loading} className="w-full h-11 min-h-[44px]">
             {loading ? 'Creating account...' : 'Register'}
           </Button>
         </form>
@@ -162,7 +162,7 @@ export default function Register() {
           <span className="relative flex justify-center text-xs text-muted-foreground bg-background px-2">Or</span>
         </div>
 
-        <Button variant="outline" className="w-full h-10" onClick={onGoogle} disabled={loading}>
+        <Button variant="outline" className="w-full h-11 min-h-[44px]" onClick={onGoogle} disabled={loading}>
           Continue with Google
         </Button>
       </div>
