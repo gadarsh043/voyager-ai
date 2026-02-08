@@ -101,3 +101,15 @@ export async function updateProfile(updates) {
   if (error) throw error
   return toAppUser(data)
 }
+
+export async function updateUserPreferences(userId, preferences) {
+  if (!userId) throw new Error('Missing user id')
+  const { data, error } = await supabase
+    .from('users')
+    .update({ preferences })
+    .eq('id', userId)
+    .select()
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
