@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CalendarDays, Globe, DollarSign, Gauge, Accessibility, UtensilsCrossed, Sparkles, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-import { updateUserPreferences } from "@/lib/auth"
 import { useAuth } from "@/context/AuthContext"
+import { INTEREST_OPTIONS } from "@/lib/constants"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
@@ -26,24 +26,6 @@ const paceOptions = [
   { value: "fast", label: "Fast", description: "Pack it all in" },
 ]
 
-const interestOptions = [
-  "Food & Drinks",
-  "Nature",
-  "History",
-  "Museums",
-  "Nightlife",
-  "Shopping",
-  "Hiking",
-  "Beaches",
-  "Art",
-  "Live Music",
-  "Parks",
-  "Sightseeing",
-  "Adventure",
-  "Photography",
-  "Local Markets",
-] as const
-
 export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const { user } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
@@ -51,6 +33,11 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const [destination, setDestination] = useState("")
   const [interests, setInterests] = useState<string[]>([])
   const [numPersons, setNumPersons] = useState(2)
+
+  useEffect(() => {
+    const saved = Array.isArray(user?.preferences) ? user.preferences.filter((p): p is string => typeof p === "string" && INTEREST_OPTIONS.includes(p)) : []
+    setInterests(saved)
+  }, [user?.id, user?.preferences])
   const [accommodationType, setAccommodationType] = useState("hotel")
   const [passport, setPassport] = useState("")
   const [budget, setBudget] = useState([3000])
@@ -68,18 +55,10 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
     }, 2000)
   }
 
-  const handleToggleInterest = (option: (typeof interestOptions)[number]) => {
-    setInterests((prev) => {
-      const next = prev.includes(option)
-        ? prev.filter((item) => item !== option)
-        : [...prev, option]
-      if (user?.id) {
-        updateUserPreferences(user.id, next).catch((error: unknown) => {
-          console.error("Failed to update interests", error)
-        })
-      }
-      return next
-    })
+  const handleToggleInterest = (option: (typeof INTEREST_OPTIONS)[number]) => {
+    setInterests((prev) =>
+      prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
+    )
   }
 
   return (
@@ -130,7 +109,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               Interests
             </Label>
             <div className="flex flex-wrap gap-3">
-              {interestOptions.map((option) => {
+              {INTEREST_OPTIONS.map((option) => {
                 const isSelected = interests.includes(option)
                 return (
                   <Button

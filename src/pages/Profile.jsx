@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/context/AuthContext'
 import { updateProfile as updateProfileApi } from '@/lib/auth'
 import { uploadAvatar } from '@/lib/storage'
+import { INTEREST_OPTIONS } from '@/lib/constants'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -16,7 +17,7 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [avatarFile, setAvatarFile] = useState(/** @type {File | null} */ (null))
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(/** @type {string | null} */ (null))
-  const [preferencesJson, setPreferencesJson] = useState('[]')
+  const [selectedInterests, setSelectedInterests] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -29,7 +30,8 @@ export default function Profile() {
     setAvatarUrl(user.avatar_url || '')
     setAvatarFile(null)
     setAvatarPreviewUrl(null)
-    setPreferencesJson(Array.isArray(user.preferences) ? JSON.stringify(user.preferences, null, 2) : '[]')
+    const prefs = Array.isArray(user.preferences) ? user.preferences : []
+    setSelectedInterests(prefs.filter((p) => typeof p === 'string' && INTEREST_OPTIONS.includes(p)))
   }, [user])
 
   // Revoke object URL when preview is no longer needed
@@ -51,14 +53,6 @@ export default function Profile() {
       setError('Last name is required')
       return
     }
-    let prefs = []
-    try {
-      const parsed = JSON.parse(preferencesJson || '[]')
-      prefs = Array.isArray(parsed) ? parsed : []
-    } catch {
-      setError('Preferences must be a valid JSON array')
-      return
-    }
     setLoading(true)
     try {
       let finalAvatarUrl = avatarUrl?.trim() || null
@@ -74,7 +68,7 @@ export default function Profile() {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         avatar_url: finalAvatarUrl,
-        preferences: prefs,
+        preferences: selectedInterests,
       })
       if (typeof refreshUser === 'function') refreshUser()
       setAvatarUrl(finalAvatarUrl || '')
@@ -165,15 +159,25 @@ export default function Profile() {
           </div>
 
           <div>
-            <Label htmlFor="preferences">Preferences (JSON array)</Label>
-            <textarea
-              id="preferences"
-              value={preferencesJson}
-              onChange={(e) => setPreferencesJson(e.target.value)}
-              rows={4}
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-              placeholder='e.g. [] or [{"dietary":"Vegan"}]'
-            />
+            <Label className="block mb-2">Travel interests</Label>
+            <p className="text-xs text-muted-foreground mb-2">Toggle your preferences; they’re saved when you click Save changes. Same options as on the trip planner.</p>
+            <div className="flex flex-wrap gap-2">
+              {INTEREST_OPTIONS.map((option) => {
+                const isSelected = selectedInterests.includes(option)
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-9 px-3"
+                    onClick={() => setSelectedInterests((prev) => (prev.includes(option) ? prev.filter((i) => i !== option) : [...prev, option]))}
+                  >
+                    {option}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
