@@ -1,6 +1,9 @@
 /**
  * API layer: set USE_MOCK to true for React mock data; when false, hits real backend.
+ * Saved plans (existing plans) are always stored in Supabase, not mock.
  */
+import { supabase } from '@/lib/supabase'
+
 const USE_MOCK = true
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 const ITINERARY_API_BASE = import.meta.env.VITE_ITINERARY_API_BASE || 'http://127.0.0.1:8000'
@@ -341,6 +344,51 @@ export async function getQuote(itineraryId) {
   return request('GET', `/itinerary/${itineraryId}/quote`)
 }
 
+// --- Saved plans (Supabase only; no mock) ---
+/**
+ * Fetch the current user's saved plans (origin, destination, dates, options).
+ * @returns {{ plans: Array<{ id: string, origin: string, destination: string, start_date?: string, end_date?: string, options: array, created_at: string }> }}
+ */
+export async function getSavedPlans() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { plans: [] }
+  const { data, error } = await supabase
+    .from('user_plans')
+    .select('id, origin, destination, start_date, end_date, options, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return { plans: data || [] }
+}
+
+/**
+ * Save a new plan after generating itineraries (adds to "Existing plans").
+ * @param {{ origin: string, destination: string, start_date?: string, end_date?: string, options: array }} payload
+ * @returns {{ id: string }}
+ */
+export async function saveSavedPlan(payload) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to save a plan')
+  const { origin, destination, start_date, end_date, options } = payload
+  if (!origin || !destination || !Array.isArray(options) || options.length === 0) {
+    throw new Error('origin, destination, and options (array) are required')
+  }
+  const { data, error } = await supabase
+    .from('user_plans')
+    .insert({
+      user_id: user.id,
+      origin: String(origin).trim(),
+      destination: String(destination).trim(),
+      start_date: start_date || null,
+      end_date: end_date || null,
+      options,
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  return { id: data.id }
+}
+
 export async function checkout(itineraryId) {
   if (USE_MOCK) {
     await delay(800)
@@ -367,4 +415,6 @@ export const api = {
   planWithPicks,
   getQuote,
   checkout,
+  getSavedPlans,
+  saveSavedPlan,
 }

@@ -13,7 +13,8 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 import { INTEREST_OPTIONS } from "@/lib/constants"
-import { generateItinerary } from "@/lib/api"
+import { COUNTRY_NAMES } from "@/lib/countries"
+import { generateItinerary, saveSavedPlan } from "@/lib/api"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
@@ -72,6 +73,17 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
       })
       if (res?.options?.length) {
         sessionStorage.removeItem("itinerary_generating")
+        try {
+          await saveSavedPlan({
+            origin: origin.trim() || 'Unknown',
+            destination: destination.trim() || 'Unknown',
+            start_date: startDate,
+            end_date: endDate,
+            options: res.options,
+          })
+        } catch {
+          // non-blocking: still navigate to plan even if save fails
+        }
         onSubmit({ options: res.options })
       } else {
         sessionStorage.removeItem("itinerary_generating")
@@ -132,28 +144,28 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm lg:p-8">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* From / Origin */}
+          {/* From / Origin (city or place) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <MapPin className="h-4 w-4 text-primary" />
               Travel from
             </Label>
             <Input
-              placeholder="e.g. San Francisco"
+              placeholder="e.g. Houston, Dallas, London"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               className="h-11"
             />
           </div>
 
-          {/* Destination */}
+          {/* Destination (city or place) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <MapPin className="h-4 w-4 text-primary" />
               Destination
             </Label>
             <Input
-              placeholder="e.g. Tokyo, Japan"
+              placeholder="e.g. Dallas, New York, Tokyo"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               className="h-11"
@@ -266,16 +278,11 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="us">United States</SelectItem>
-                <SelectItem value="uk">United Kingdom</SelectItem>
-                <SelectItem value="ca">Canada</SelectItem>
-                <SelectItem value="au">Australia</SelectItem>
-                <SelectItem value="de">Germany</SelectItem>
-                <SelectItem value="fr">France</SelectItem>
-                <SelectItem value="jp">Japan</SelectItem>
-                <SelectItem value="sg">Singapore</SelectItem>
-                <SelectItem value="in">India</SelectItem>
-                <SelectItem value="br">Brazil</SelectItem>
+                {COUNTRY_NAMES.map((name: string) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
