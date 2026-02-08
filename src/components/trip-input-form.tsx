@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { updateUserPreferences } from "@/lib/auth"
+import { useAuth } from "@/context/AuthContext"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
@@ -24,11 +26,14 @@ const paceOptions = [
   { value: "fast", label: "Fast", description: "Pack it all in" },
 ]
 
+const interestOptions = ["Food", "Temple", "Nightlife", "Nature"] as const
+
 export function TripInputForm({ onSubmit }: TripInputFormProps) {
+  const { user } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [origin, setOrigin] = useState("")
   const [destination, setDestination] = useState("")
-  const [interests, setInterests] = useState("")
+  const [interests, setInterests] = useState<string[]>([])
   const [numPersons, setNumPersons] = useState(2)
   const [accommodationType, setAccommodationType] = useState("hotel")
   const [passport, setPassport] = useState("")
@@ -45,6 +50,20 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
       setIsGenerating(false)
       onSubmit()
     }, 2000)
+  }
+
+  const handleToggleInterest = (option: (typeof interestOptions)[number]) => {
+    setInterests((prev) => {
+      const next = prev.includes(option)
+        ? prev.filter((item) => item !== option)
+        : [...prev, option]
+      if (user?.id) {
+        updateUserPreferences(user.id, next).catch((error: unknown) => {
+          console.error("Failed to update interests", error)
+        })
+      }
+      return next
+    })
   }
 
   return (
@@ -94,12 +113,23 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               <Sparkles className="h-4 w-4 text-primary" />
               Interests
             </Label>
-            <Input
-              placeholder="e.g. Food, temples, nightlife, nature"
-              value={interests}
-              onChange={(e) => setInterests(e.target.value)}
-              className="h-11"
-            />
+            <div className="flex flex-wrap gap-3">
+              {interestOptions.map((option) => {
+                const isSelected = interests.includes(option)
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    onClick={() => handleToggleInterest(option)}
+                    variant={isSelected ? "default" : "outline"}
+                    aria-pressed={isSelected}
+                    className="h-11 px-4"
+                  >
+                    {option}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Number of persons */}
