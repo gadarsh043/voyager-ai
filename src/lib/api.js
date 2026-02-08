@@ -637,6 +637,11 @@ function buildTripDocumentContent(option, quote, origin = 'Origin', destination 
   lines.push('')
   lines.push('Hello / Thank you / Please / Yes / No / Where is…? / How much?')
   lines.push('(Customize per destination in your PDF.)')
+  lines.push('')
+  lines.push('---')
+  lines.push('EMERGENCY CONTACTS')
+  lines.push('')
+  lines.push('(When using the live backend, this section is filled by AI with destination-specific numbers and contacts.)')
   return lines.join('\n')
 }
 

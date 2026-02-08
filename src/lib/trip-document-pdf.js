@@ -27,12 +27,16 @@ const SECTION_HEADINGS = [
   'MOBILE PLAN',
   'CARD BENEFITS',
   'LOCAL LANGUAGE CHEAT SHEET',
+  'EMERGENCY CONTACTS',
   'OUTBOUND FLIGHT',
   'RETURN FLIGHT',
   'HOTELS',
   'DAILY ACTIVITIES',
   'Redemption tips',
 ]
+
+const TIMELINE_HEADINGS = ['OUTBOUND FLIGHT', 'RETURN FLIGHT', 'HOTELS', 'DAILY ACTIVITIES', 'TRIP ITINERARY']
+const DAY_LINE = /^Day\s+\d+$/i
 
 function getContentBlocks(content) {
   if (!content || typeof content !== 'string') return []
@@ -99,18 +103,95 @@ export function openTripDocumentPrintView(content) {
     doc.text('Your trip itinerary · Suggestions · Currency · Mobile · Card benefits · Language', PAGE.margin, 24)
     y = 34
 
+    const timelineLineX = PAGE.margin + 1.5
+    const timelineIndent = 6
+    const timelineContentWidth = PAGE.contentWidth - timelineIndent
+    const isTimelineSection = (text) => TIMELINE_HEADINGS.some((h) => text.toUpperCase() === h.toUpperCase())
+    const isEmergency = (text) => text.toUpperCase() === 'EMERGENCY CONTACTS'
+
     // ---- Content blocks ----
     const blocks = getContentBlocks(content)
-    for (const block of blocks) {
+    for (let b = 0; b < blocks.length; b++) {
+      const block = blocks[b]
       if (block.type === 'heading') {
         checkPage(18)
         y += sectionGap
-        doc.setFillColor(241, 245, 249)
-        doc.rect(0, y - 4, PAGE.width, 10, 'F')
-        doc.setFillColor(...BRAND.accent)
-        doc.rect(0, y - 4, 3, 10, 'F')
-        doc.setTextColor(...BRAND.primaryDark)
-        doc.setFontSize(12)
+        const isTimeline = isTimelineSection(block.text)
+        const emergency = isEmergency(block.text)
+
+        if (isTimeline) {
+          const sectionStartY = y
+          doc.setFillColor(...BRAND.primary)
+          doc.circle(timelineLineX, y + 2, 1.2, 'F')
+          doc.setFillColor(241, 245, 249)
+          doc.rect(PAGE.margin, y - 4, PAGE.width - PAGE.margin, 10, 'F')
+          doc.setFillColor(...BRAND.primary)
+          doc.rect(0, y - 4, 3, 10, 'F')
+          doc.setTextColor(...BRAND.primaryDark)
+          doc.setFontSize(11)
+          doc.setFont('times', 'bold')
+          doc.text(block.text, PAGE.margin + 4, y + 2)
+          doc.setFont('helvetica', 'normal')
+          y += 6 + headingGap
+          const bodyBlock = blocks[b + 1]
+          if (bodyBlock?.type === 'body') {
+            doc.setFontSize(10)
+            doc.setTextColor(...BRAND.dark)
+            const bulletWidth = timelineContentWidth - 5
+            for (const line of bodyBlock.lines) {
+              const isDay = DAY_LINE.test(line.trim())
+              if (isDay) {
+                checkPage(12)
+                doc.setFillColor(224, 242, 254)
+                doc.rect(PAGE.margin + timelineIndent - 2, y - 3.5, timelineContentWidth + 2, 7, 'F')
+                doc.setFillColor(...BRAND.accent)
+                doc.rect(PAGE.margin + timelineIndent, y - 3, 1.5, 6, 'F')
+                doc.setFont('helvetica', 'bold')
+                doc.setFontSize(10)
+                doc.setTextColor(...BRAND.primaryDark)
+                doc.text(line.trim(), PAGE.margin + timelineIndent + 3, y + 1)
+                doc.setFont('helvetica', 'normal')
+                doc.setTextColor(...BRAND.dark)
+                y += lineHeight + 2
+                continue
+              }
+              const isBullet = /^[-•]\s*/.test(line) || /^\d+\.\s+/.test(line)
+              const text = /^[-•]\s*/.test(line) ? line : line.replace(/^(\d+\.\s+)/, '• ')
+              const wrapped = doc.splitTextToSize(text, bulletWidth)
+              for (const part of wrapped) {
+                checkPage(lineHeight)
+                doc.text(part, PAGE.margin + timelineIndent + (isBullet ? 4 : 0), y)
+                y += lineHeight
+              }
+            }
+            doc.setDrawColor(...BRAND.primary)
+            doc.setLineWidth(0.3)
+            doc.line(timelineLineX, sectionStartY + 4, timelineLineX, y + 2)
+            y += 3
+            b++
+          } else {
+            doc.setDrawColor(...BRAND.primary)
+            doc.setLineWidth(0.3)
+            doc.line(timelineLineX, sectionStartY + 4, timelineLineX, y + 4)
+            y += 2
+          }
+          continue
+        }
+
+        if (emergency) {
+          doc.setFillColor(254, 226, 226)
+          doc.rect(0, y - 4, PAGE.width, 10, 'F')
+          doc.setFillColor(220, 38, 38)
+          doc.rect(0, y - 4, 3, 10, 'F')
+          doc.setTextColor(127, 29, 29)
+        } else {
+          doc.setFillColor(241, 245, 249)
+          doc.rect(0, y - 4, PAGE.width, 10, 'F')
+          doc.setFillColor(...BRAND.accent)
+          doc.rect(0, y - 4, 3, 10, 'F')
+          doc.setTextColor(...BRAND.primaryDark)
+        }
+        doc.setFontSize(emergency ? 12 : 12)
         doc.setFont('times', 'bold')
         doc.text(block.text, PAGE.margin + 2, y + 2)
         doc.setFont('helvetica', 'normal')
@@ -120,6 +201,7 @@ export function openTripDocumentPrintView(content) {
       if (block.type === 'body') {
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(10)
+        doc.setTextColor(...BRAND.dark)
         const bulletIndent = 5
         const bulletWidth = PAGE.contentWidth - bulletIndent
         for (const line of block.lines) {
@@ -128,7 +210,6 @@ export function openTripDocumentPrintView(content) {
           const wrapped = doc.splitTextToSize(text, isBullet ? bulletWidth : PAGE.contentWidth)
           for (const part of wrapped) {
             checkPage(lineHeight)
-            doc.setTextColor(...(isBullet ? BRAND.dark : BRAND.dark))
             doc.text(part, PAGE.margin + (isBullet ? bulletIndent : 0), y)
             y += lineHeight
           }
