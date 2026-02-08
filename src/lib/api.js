@@ -30,32 +30,206 @@ const mockTrips = [
   },
 ]
 
+// Itinerary options for /plan — timeline shape (matches API and Supabase content)
 const mockItineraryOptions = [
   {
     id: 'opt_1',
-    label: 'Luxury & Leisure',
-    daily_plan: [
-      { day: 1, activities: ['Arrive NRT', 'Private transfer', 'Senso-ji Temple'], hotel: 'Aman Tokyo' },
-      { day: 2, activities: ['Tsukiji', 'TeamLab Borderless', 'Michelin dinner'], hotel: 'Aman Tokyo' },
-    ],
+    label: 'Itinerary Plan 1',
+    daily_plan: {
+      flight_from_source: {
+        from_location: 'SFO',
+        start_time: '2026-03-15T08:00:00Z',
+        reach_by: '2026-03-16T14:30:00Z',
+      },
+      flight_to_origin: {
+        from_location: 'NRT',
+        to_location: 'SFO',
+        start_time: '2026-03-19T10:00:00Z',
+        reach_by: '2026-03-19T18:00:00Z',
+      },
+      hotel_stay: [
+        {
+          name: 'Aman Tokyo',
+          check_in: '2026-03-16',
+          check_out: '2026-03-19',
+          image_url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=200&h=150&fit=crop',
+          google_maps_url: 'https://www.google.com/maps/search/Aman+Tokyo',
+        },
+      ],
+      days: [
+        {
+          day: 1,
+          activities: [
+            { start_from: 'NRT', start_time: '14:30', reach_time: '16:00', time_to_spend: '1h 30m' },
+            { start_from: 'Hotel', start_time: '18:00', reach_time: '18:30', time_to_spend: '2h' },
+          ],
+        },
+        {
+          day: 2,
+          activities: [
+            { start_from: 'Hotel', start_time: '09:00', reach_time: '09:45', time_to_spend: '2h' },
+            {
+              start_from: 'Tsukiji',
+              start_time: '12:00',
+              reach_time: '12:15',
+              time_to_spend: '1h 30m',
+              image_url: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Tsukiji+market+Tokyo',
+            },
+            {
+              start_from: 'TeamLab',
+              start_time: '15:00',
+              reach_time: '15:30',
+              time_to_spend: '2h',
+              image_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/teamLab+Borderless+Tokyo',
+            },
+          ],
+        },
+        {
+          day: 3,
+          activities: [
+            { start_from: 'Hotel', start_time: '08:00', reach_time: '10:30', time_to_spend: '4h' },
+            {
+              start_from: 'Mt. Fuji',
+              start_time: '15:00',
+              reach_time: '18:00',
+              time_to_spend: '—',
+              image_url: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Mt+Fuji',
+            },
+          ],
+        },
+      ],
+    },
     total_estimated_cost: 5500,
   },
   {
     id: 'opt_2',
-    label: 'Balanced Comfort',
-    daily_plan: [
-      { day: 1, activities: ['Arrive HND', 'Train to city', 'Shibuya'], hotel: 'The Gate Hotel' },
-      { day: 2, activities: ['Meiji Shrine', 'Harajuku', 'Ginza'], hotel: 'The Gate Hotel' },
-    ],
+    label: 'Itinerary Plan 2',
+    daily_plan: {
+      flight_from_source: {
+        from_location: 'SFO',
+        start_time: '2026-03-15T10:00:00Z',
+        reach_by: '2026-03-16T16:00:00Z',
+      },
+      flight_to_origin: {
+        from_location: 'HND',
+        to_location: 'SFO',
+        start_time: '2026-03-19T18:00:00Z',
+        reach_by: '2026-03-19T12:00:00Z',
+      },
+      hotel_stay: [
+        {
+          name: 'The Gate Hotel Asakusa',
+          check_in: '2026-03-16',
+          check_out: '2026-03-19',
+          image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200&h=150&fit=crop',
+          google_maps_url: 'https://www.google.com/maps/search/The+Gate+Hotel+Asakusa',
+        },
+      ],
+      days: [
+        {
+          day: 1,
+          activities: [
+            { start_from: 'HND', start_time: '16:00', reach_time: '17:30', time_to_spend: '1h' },
+            {
+              start_from: 'Shibuya',
+              start_time: '19:00',
+              reach_time: '19:30',
+              time_to_spend: '2h',
+              image_url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Shibuya+Crossing+Tokyo',
+            },
+          ],
+        },
+        {
+          day: 2,
+          activities: [
+            { start_from: 'Hotel', start_time: '09:00', reach_time: '09:30', time_to_spend: '1h 30m' },
+            {
+              start_from: 'Harajuku',
+              start_time: '11:00',
+              reach_time: '11:20',
+              time_to_spend: '2h',
+              image_url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Harajuku+Tokyo',
+            },
+            {
+              start_from: 'Ginza',
+              start_time: '14:00',
+              reach_time: '14:30',
+              time_to_spend: '2h',
+              image_url: 'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Ginza+Tokyo',
+            },
+          ],
+        },
+        {
+          day: 3,
+          activities: [
+            { start_from: 'Hotel', start_time: '08:30', reach_time: '09:00', time_to_spend: '3h' },
+          ],
+        },
+      ],
+    },
     total_estimated_cost: 2840,
   },
   {
     id: 'opt_3',
-    label: 'Budget Explorer',
-    daily_plan: [
-      { day: 1, activities: ['Arrive', 'Asakusa walk', 'Street food'], hotel: 'Mystays Asakusa' },
-      { day: 2, activities: ['Tsukiji outer market', 'Ueno Park'], hotel: 'Mystays Asakusa' },
-    ],
+    label: 'Itinerary Plan 3',
+    daily_plan: {
+      flight_from_source: {
+        from_location: 'SFO',
+        start_time: '2026-03-15T23:00:00Z',
+        reach_by: '2026-03-16T06:00:00Z',
+      },
+      flight_to_origin: {
+        from_location: 'NRT',
+        to_location: 'SFO',
+        start_time: '2026-03-18T22:00:00Z',
+        reach_by: '2026-03-18T16:00:00Z',
+      },
+      hotel_stay: [
+        {
+          name: 'Hotel Mystays Asakusa',
+          check_in: '2026-03-16',
+          check_out: '2026-03-19',
+          image_url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=200&h=150&fit=crop',
+          google_maps_url: 'https://www.google.com/maps/search/Mystays+Asakusa',
+        },
+      ],
+      days: [
+        {
+          day: 1,
+          activities: [
+            { start_from: 'NRT', start_time: '06:00', reach_time: '08:30', time_to_spend: '2h' },
+            {
+              start_from: 'Asakusa',
+              start_time: '10:00',
+              reach_time: '10:15',
+              time_to_spend: '3h',
+              image_url: 'https://images.unsplash.com/photo-1542640244-7e672d6cef4e?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Senso-ji+Temple+Asakusa',
+            },
+          ],
+        },
+        {
+          day: 2,
+          activities: [
+            { start_from: 'Hotel', start_time: '07:00', reach_time: '07:30', time_to_spend: '2h' },
+            {
+              start_from: 'Ueno Park',
+              start_time: '10:00',
+              reach_time: '10:20',
+              time_to_spend: '3h',
+              image_url: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=200&h=150&fit=crop',
+              google_maps_url: 'https://www.google.com/maps/search/Ueno+Park+Tokyo',
+            },
+          ],
+        },
+      ],
+    },
     total_estimated_cost: 1420,
   },
 ]
@@ -135,6 +309,19 @@ export async function customiseItinerary(id, payload) {
   return request('PATCH', `/itinerary/${id}/customise`, payload)
 }
 
+/**
+ * Request AI to build a custom itinerary from user's picks (selected activities + custom Google links) and get quote.
+ * @param {{ picks: Array<{ label: string, google_maps_url?: string }> }} payload
+ * @returns {{ option_id: string, option?: object }} option_id for quote page
+ */
+export async function planWithPicks(payload) {
+  if (USE_MOCK) {
+    await delay(2000)
+    return { option_id: 'custom_from_picks', option: mockItineraryOptions[0] }
+  }
+  return request('POST', '/itinerary/plan-with-picks', payload)
+}
+
 export async function getQuote(itineraryId) {
   if (USE_MOCK) {
     await delay(400)
@@ -166,6 +353,7 @@ export const api = {
   joinTeam,
   generateItinerary,
   customiseItinerary,
+  planWithPicks,
   getQuote,
   checkout,
 }
