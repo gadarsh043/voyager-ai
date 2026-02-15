@@ -51,3 +51,169 @@ body {
   @apply bg-background text-foreground antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Sidebar - CSS variables via classes */
+.sidebar-provider {
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+}
+
+.sidebar-mobile {
+  --sidebar-width: 18rem;
+}
+
+/* Sidebar skeleton - random width 50-89% */
+.sidebar-skeleton-text[data-skeleton-width='50'] { max-width: 50%; }
+.sidebar-skeleton-text[data-skeleton-width='51'] { max-width: 51%; }
+.sidebar-skeleton-text[data-skeleton-width='52'] { max-width: 52%; }
+.sidebar-skeleton-text[data-skeleton-width='53'] { max-width: 53%; }
+.sidebar-skeleton-text[data-skeleton-width='54'] { max-width: 54%; }
+.sidebar-skeleton-text[data-skeleton-width='55'] { max-width: 55%; }
+.sidebar-skeleton-text[data-skeleton-width='56'] { max-width: 56%; }
+.sidebar-skeleton-text[data-skeleton-width='57'] { max-width: 57%; }
+.sidebar-skeleton-text[data-skeleton-width='58'] { max-width: 58%; }
+.sidebar-skeleton-text[data-skeleton-width='59'] { max-width: 59%; }
+.sidebar-skeleton-text[data-skeleton-width='60'] { max-width: 60%; }
+.sidebar-skeleton-text[data-skeleton-width='61'] { max-width: 61%; }
+.sidebar-skeleton-text[data-skeleton-width='62'] { max-width: 62%; }
+.sidebar-skeleton-text[data-skeleton-width='63'] { max-width: 63%; }
+.sidebar-skeleton-text[data-skeleton-width='64'] { max-width: 64%; }
+.sidebar-skeleton-text[data-skeleton-width='65'] { max-width: 65%; }
+.sidebar-skeleton-text[data-skeleton-width='66'] { max-width: 66%; }
+.sidebar-skeleton-text[data-skeleton-width='67'] { max-width: 67%; }
+.sidebar-skeleton-text[data-skeleton-width='68'] { max-width: 68%; }
+.sidebar-skeleton-text[data-skeleton-width='69'] { max-width: 69%; }
+.sidebar-skeleton-text[data-skeleton-width='70'] { max-width: 70%; }
+.sidebar-skeleton-text[data-skeleton-width='71'] { max-width: 71%; }
+.sidebar-skeleton-text[data-skeleton-width='72'] { max-width: 72%; }
+.sidebar-skeleton-text[data-skeleton-width='73'] { max-width: 73%; }
+.sidebar-skeleton-text[data-skeleton-width='74'] { max-width: 74%; }
+.sidebar-skeleton-text[data-skeleton-width='75'] { max-width: 75%; }
+.sidebar-skeleton-text[data-skeleton-width='76'] { max-width: 76%; }
+.sidebar-skeleton-text[data-skeleton-width='77'] { max-width: 77%; }
+.sidebar-skeleton-text[data-skeleton-width='78'] { max-width: 78%; }
+.sidebar-skeleton-text[data-skeleton-width='79'] { max-width: 79%; }
+.sidebar-skeleton-text[data-skeleton-width='80'] { max-width: 80%; }
+.sidebar-skeleton-text[data-skeleton-width='81'] { max-width: 81%; }
+.sidebar-skeleton-text[data-skeleton-width='82'] { max-width: 82%; }
+.sidebar-skeleton-text[data-skeleton-width='83'] { max-width: 83%; }
+.sidebar-skeleton-text[data-skeleton-width='84'] { max-width: 84%; }
+.sidebar-skeleton-text[data-skeleton-width='85'] { max-width: 85%; }
+.sidebar-skeleton-text[data-skeleton-width='86'] { max-width: 86%; }
+.sidebar-skeleton-text[data-skeleton-width='87'] { max-width: 87%; }
+.sidebar-skeleton-text[data-skeleton-width='88'] { max-width: 88%; }
+.sidebar-skeleton-text[data-skeleton-width='89'] { max-width: 89%; }
+.sidebar-skeleton-text[data-skeleton-width='90'] { max-width: 90%; }
+
+/* Progress - dynamic value via data-value 0-100 */
+.progress-indicator[data-value='0'] { transform: translateX(-100%); }
+.progress-indicator[data-value='1'] { transform: translateX(-99%); }
+.progress-indicator[data-value='2'] { transform: translateX(-98%); }
+.progress-indicator[data-value='3'] { transform: translateX(-97%); }
+.progress-indicator[data-value='4'] { transform: translateX(-96%); }
+.progress-indicator[data-value='5'] { transform: translateX(-95%); }
+.progress-indicator[data-value='6'] { transform: translateX(-94%); }
+.progress-indicator[data-value='7'] { transform: translateX(-93%); }
+.progress-indicator[data-value='8'] { transform: translateX(-92%); }
+.progress-indicator[data-value='9'] { transform: translateX(-91%); }
+.progress-indicator[data-value='10'] { transform: translateX(-90%); }
+.progress-indicator[data-value='11'] { transform: translateX(-89%); }
+.progress-indicator[data-value='12'] { transform: translateX(-88%); }
+.progress-indicator[data-value='13'] { transform: translateX(-87%); }
+.progress-indicator[data-value='14'] { transform: translateX(-86%); }
+.progress-indicator[data-value='15'] { transform: translateX(-85%); }
+.progress-indicator[data-value='16'] { transform: translateX(-84%); }
+.progress-indicator[data-value='17'] { transform: translateX(-83%); }
+.progress-indicator[data-value='18'] { transform: translateX(-82%); }
+.progress-indicator[data-value='19'] { transform: translateX(-81%); }
+.progress-indicator[data-value='20'] { transform: translateX(-80%); }
+.progress-indicator[data-value='21'] { transform: translateX(-79%); }
+.progress-indicator[data-value='22'] { transform: translateX(-78%); }
+.progress-indicator[data-value='23'] { transform: translateX(-77%); }
+.progress-indicator[data-value='24'] { transform: translateX(-76%); }
+.progress-indicator[data-value='25'] { transform: translateX(-75%); }
+.progress-indicator[data-value='26'] { transform: translateX(-74%); }
+.progress-indicator[data-value='27'] { transform: translateX(-73%); }
+.progress-indicator[data-value='28'] { transform: translateX(-72%); }
+.progress-indicator[data-value='29'] { transform: translateX(-71%); }
+.progress-indicator[data-value='30'] { transform: translateX(-70%); }
+.progress-indicator[data-value='31'] { transform: translateX(-69%); }
+.progress-indicator[data-value='32'] { transform: translateX(-68%); }
+.progress-indicator[data-value='33'] { transform: translateX(-67%); }
+.progress-indicator[data-value='34'] { transform: translateX(-66%); }
+.progress-indicator[data-value='35'] { transform: translateX(-65%); }
+.progress-indicator[data-value='36'] { transform: translateX(-64%); }
+.progress-indicator[data-value='37'] { transform: translateX(-63%); }
+.progress-indicator[data-value='38'] { transform: translateX(-62%); }
+.progress-indicator[data-value='39'] { transform: translateX(-61%); }
+.progress-indicator[data-value='40'] { transform: translateX(-60%); }
+.progress-indicator[data-value='41'] { transform: translateX(-59%); }
+.progress-indicator[data-value='42'] { transform: translateX(-58%); }
+.progress-indicator[data-value='43'] { transform: translateX(-57%); }
+.progress-indicator[data-value='44'] { transform: translateX(-56%); }
+.progress-indicator[data-value='45'] { transform: translateX(-55%); }
+.progress-indicator[data-value='46'] { transform: translateX(-54%); }
+.progress-indicator[data-value='47'] { transform: translateX(-53%); }
+.progress-indicator[data-value='48'] { transform: translateX(-52%); }
+.progress-indicator[data-value='49'] { transform: translateX(-51%); }
+.progress-indicator[data-value='50'] { transform: translateX(-50%); }
+.progress-indicator[data-value='51'] { transform: translateX(-49%); }
+.progress-indicator[data-value='52'] { transform: translateX(-48%); }
+.progress-indicator[data-value='53'] { transform: translateX(-47%); }
+.progress-indicator[data-value='54'] { transform: translateX(-46%); }
+.progress-indicator[data-value='55'] { transform: translateX(-45%); }
+.progress-indicator[data-value='56'] { transform: translateX(-44%); }
+.progress-indicator[data-value='57'] { transform: translateX(-43%); }
+.progress-indicator[data-value='58'] { transform: translateX(-42%); }
+.progress-indicator[data-value='59'] { transform: translateX(-41%); }
+.progress-indicator[data-value='60'] { transform: translateX(-40%); }
+.progress-indicator[data-value='61'] { transform: translateX(-39%); }
+.progress-indicator[data-value='62'] { transform: translateX(-38%); }
+.progress-indicator[data-value='63'] { transform: translateX(-37%); }
+.progress-indicator[data-value='64'] { transform: translateX(-36%); }
+.progress-indicator[data-value='65'] { transform: translateX(-35%); }
+.progress-indicator[data-value='66'] { transform: translateX(-34%); }
+.progress-indicator[data-value='67'] { transform: translateX(-33%); }
+.progress-indicator[data-value='68'] { transform: translateX(-32%); }
+.progress-indicator[data-value='69'] { transform: translateX(-31%); }
+.progress-indicator[data-value='70'] { transform: translateX(-30%); }
+.progress-indicator[data-value='71'] { transform: translateX(-29%); }
+.progress-indicator[data-value='72'] { transform: translateX(-28%); }
+.progress-indicator[data-value='73'] { transform: translateX(-27%); }
+.progress-indicator[data-value='74'] { transform: translateX(-26%); }
+.progress-indicator[data-value='75'] { transform: translateX(-25%); }
+.progress-indicator[data-value='76'] { transform: translateX(-24%); }
+.progress-indicator[data-value='77'] { transform: translateX(-23%); }
+.progress-indicator[data-value='78'] { transform: translateX(-22%); }
+.progress-indicator[data-value='79'] { transform: translateX(-21%); }
+.progress-indicator[data-value='80'] { transform: translateX(-20%); }
+.progress-indicator[data-value='81'] { transform: translateX(-19%); }
+.progress-indicator[data-value='82'] { transform: translateX(-18%); }
+.progress-indicator[data-value='83'] { transform: translateX(-17%); }
+.progress-indicator[data-value='84'] { transform: translateX(-16%); }
+.progress-indicator[data-value='85'] { transform: translateX(-15%); }
+.progress-indicator[data-value='86'] { transform: translateX(-14%); }
+.progress-indicator[data-value='87'] { transform: translateX(-13%); }
+.progress-indicator[data-value='88'] { transform: translateX(-12%); }
+.progress-indicator[data-value='89'] { transform: translateX(-11%); }
+.progress-indicator[data-value='90'] { transform: translateX(-10%); }
+.progress-indicator[data-value='91'] { transform: translateX(-9%); }
+.progress-indicator[data-value='92'] { transform: translateX(-8%); }
+.progress-indicator[data-value='93'] { transform: translateX(-7%); }
+.progress-indicator[data-value='94'] { transform: translateX(-6%); }
+.progress-indicator[data-value='95'] { transform: translateX(-5%); }
+.progress-indicator[data-value='96'] { transform: translateX(-4%); }
+.progress-indicator[data-value='97'] { transform: translateX(-3%); }
+.progress-indicator[data-value='98'] { transform: translateX(-2%); }
+.progress-indicator[data-value='99'] { transform: translateX(-1%); }
+.progress-indicator[data-value='100'] { transform: translateX(0); }
+
+/* Chart - indicator and legend use --color-bg/--color-border set by data-color-key rules in ChartStyle */
+.chart-indicator {
+  background-color: var(--color-bg);
+  border-color: var(--color-border);
+}
+
+.chart-legend-dot {
+  background-color: var(--color-bg);
+}
