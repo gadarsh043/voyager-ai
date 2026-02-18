@@ -8,6 +8,84 @@ const USE_MOCK = true
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 const ITINERARY_API_BASE = import.meta.env.VITE_ITINERARY_API_BASE || 'http://127.0.0.1:8000'
 
+/**
+ * Fetch destinations from backend (DeepNLP/travel-ai-agent or curated list).
+ * @returns {{ destinations: Array<{ id: string, name: string, country?: string, query: string, image?: string, description?: string }> }}
+ */
+export async function getDestinations() {
+  const res = await fetch(`${ITINERARY_API_BASE}/destinations`, {
+    headers: { 'ngrok-skip-browser-warning': 'true' },
+  })
+  if (!res.ok) throw new Error('Failed to fetch destinations')
+  return res.json()
+}
+
+/** Pool of unique Unsplash travel/destination photo IDs for fallback images */
+const PLACE_IMAGE_POOL = [
+  '1540959733332-eab4deabeeaf', // Tokyo
+  '1502602898657-3e91760cbb34', // Paris
+  '1537996194471-e657df975ab4', // Bali
+  '1496442226666-8d4d0e62e6e9', // New York
+  '1552832230-c0197dd311b5', // Rome
+  '1583422409516-2895a77efded', // Barcelona
+  '1488646953014-85cb44e25828', // travel
+  '1527838832700-5059252407fa', // London
+  '1518558811040-8ec73e59790f', // beach
+  '1493246507139-91e8fad9978e', // mountains
+  '1476514525535-07fb3b4ae5f1', // lake
+  '1506929562872-bb421503ef21', // tropical
+  '1469851693024-abbcab42cda1', // islands
+  '1507003211169-0a1dd7228f2d', // city
+  '1519681393784-d120267933ba', // scenery
+  '1501785884341-7196e293eaa3', // nature
+  '1472214103451-9374bd1c798e', // landscape
+  '1507525428034-b723cf961d3e', // beach sunset
+  '1514525253161-7a46d19cd819', // night city
+  '1544568100-847a948585b9', // mountains snow
+  '1476514525535-07fb3b4ae5f1', // coast
+  '1559128012-7f6cf1929852', // canyon
+  '1559827260-dc66d52bef19', // cityscape
+  '1545324418-cc1a3fa10c00', // architecture
+]
+
+/** Simple string hash for deterministic image selection */
+function hashString(str) {
+  let h = 0
+  for (let i = 0; i < (str || '').length; i++) {
+    h = (h << 5) - h + str.charCodeAt(i)
+    h = h & h
+  }
+  return Math.abs(h)
+}
+
+/**
+ * Get a unique image URL for a place. Uses Unsplash API when VITE_UNSPLASH_ACCESS_KEY is set,
+ * otherwise picks from a pool of travel photos based on place name hash.
+ * @param {string} query - Place name or search query (e.g. "Tokyo, Japan")
+ * @returns {Promise<string>} Image URL
+ */
+export async function getPlaceImage(query) {
+  const key = import.meta.env.VITE_UNSPLASH_ACCESS_KEY
+  if (key && query) {
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
+        { headers: { Authorization: `Client-ID ${key}` } }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const img = data?.results?.[0]
+        if (img?.urls?.regular) return img.urls.regular
+      }
+    } catch {
+      // fall through to pool
+    }
+  }
+  const idx = hashString(query) % PLACE_IMAGE_POOL.length
+  const id = PLACE_IMAGE_POOL[idx]
+  return `https://images.unsplash.com/photo-${id}?w=600&h=400&fit=crop&q=80`
+}
+
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
 
 // --- Mock data (trips, itinerary, quote only; auth is Supabase) ---
@@ -362,8 +440,18 @@ export async function generateItinerary(params) {
     body: JSON.stringify(params ?? {}),
   })
   if (!res.ok) {
+    let message = `Itinerary API error ${res.status}`
     const text = await res.text()
-    throw new Error(text || `Itinerary API error ${res.status}`)
+    if (text) {
+      try {
+        const body = JSON.parse(text)
+        if (body?.detail && typeof body.detail === 'string') message = body.detail
+        else message = text
+      } catch {
+        message = text
+      }
+    }
+    throw new Error(message)
   }
   const data = await res.json()
   if (!data || !Array.isArray(data.options)) {
@@ -397,8 +485,18 @@ export async function planWithPicks(payload) {
     body: JSON.stringify(payload ?? {}),
   })
   if (!res.ok) {
+    let message = `Plan-with-picks API error ${res.status}`
     const text = await res.text()
-    throw new Error(text || `Plan-with-picks API error ${res.status}`)
+    if (text) {
+      try {
+        const body = JSON.parse(text)
+        if (body?.detail && typeof body.detail === 'string') message = body.detail
+        else message = text
+      } catch {
+        message = text
+      }
+    }
+    throw new Error(message)
   }
   const data = await res.json()
   if (!data || !data.option_id) {
@@ -553,6 +651,55 @@ export async function joinTripByCode(inviteCode) {
   })
   if (insertError) throw new Error(insertError.message)
   return { success: true }
+}
+
+/**
+ * Track a flight by airline code + number (e.g. UA1234).
+ * Backend should use Aviation Stack, FlightAware, or similar API.
+ * @param {string} flightNumber - e.g. "UA1234", "AA456"
+ * @returns {Promise<{ status?: string, departure?: { airport?: string, time?: string }, arrival?: { airport?: string, time?: string } }>}
+ */
+/**
+ * Search flights between origin and destination (used in itinerary/plan page).
+ * @param {{ origin: string, destination: string, date?: string }} params
+ * @returns {Promise<{ flights: Array<{ flight_iata?: string, departure?: object, arrival?: object, status?: string }> }>}
+ */
+export async function searchFlights(params) {
+  const url = `${ITINERARY_API_BASE}/flights/search`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    body: JSON.stringify(params ?? {}),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    if (res.status === 404) throw new Error('Flight search will be available once your backend supports it.')
+    throw new Error(text || `Flight search error ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function trackFlight(flightNumber) {
+  const url = `${ITINERARY_API_BASE}/flights/track`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    body: JSON.stringify({ flight_number: flightNumber }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    if (res.status === 404) {
+      throw new Error('Flight tracking will be available once your backend is connected. See BACKEND_PROMPT.md.')
+    }
+    throw new Error(text || `Flight tracking error ${res.status}`)
+  }
+  return res.json()
 }
 
 export async function checkout(itineraryId) {
@@ -768,4 +915,7 @@ export const api = {
   createBooking,
   getBooking,
   getBookingsForUser,
+  getDestinations,
+  trackFlight,
+  searchFlights,
 }

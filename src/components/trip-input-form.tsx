@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { CalendarDays, Globe, DollarSign, Gauge, Accessibility, UtensilsCrossed, Sparkles, MapPin } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { useLocation } from "react-router-dom"
+import { CalendarDays, Globe, DollarSign, Gauge, Accessibility, UtensilsCrossed, Sparkles, MapPin, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
@@ -29,9 +30,38 @@ const paceOptions = [
   { value: "fast", label: "Fast", description: "Pack it all in" },
 ]
 
+const TRIP_FORM_DRAFT_KEY = "trip_form_draft"
+
+function loadDraft() {
+  try {
+    const s = sessionStorage.getItem(TRIP_FORM_DRAFT_KEY)
+    if (s) return JSON.parse(s) as Record<string, unknown>
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+function saveDraft(data: Record<string, unknown>) {
+  try {
+    sessionStorage.setItem(TRIP_FORM_DRAFT_KEY, JSON.stringify(data))
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(TRIP_FORM_DRAFT_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 export function TripInputForm({ onSubmit }: TripInputFormProps) {
   const { user } = useAuth()
   const isMobile = useIsMobile()
+  const location = useLocation()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [origin, setOrigin] = useState("")
   const [destination, setDestination] = useState("")
@@ -42,29 +72,71 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
     const saved = Array.isArray(user?.preferences) ? user.preferences.filter((p): p is string => typeof p === "string" && INTEREST_OPTIONS.includes(p)) : []
     setInterests(saved)
   }, [user?.id, user?.preferences])
+
+  useEffect(() => {
+    const prefill = (location.state as { prefillDestination?: string })?.prefillDestination
+    if (prefill && typeof prefill === "string") {
+      setDestination(prefill)
+    }
+  }, [location.state])
   const [accommodationType, setAccommodationType] = useState("hotel")
   const [passport, setPassport] = useState("")
-  const [budget, setBudget] = useState([3000])
   const [perPersonBudget, setPerPersonBudget] = useState([1000])
   const [pace, setPace] = useState("moderate")
   const [disability, setDisability] = useState(false)
   const [dietary, setDietary] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generateError, setGenerateError] = useState<string | null>(null)
+  const errorBannerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const draft = loadDraft()
+    if (draft) {
+      if (typeof draft.origin === "string") setOrigin(draft.origin)
+      if (typeof draft.destination === "string") setDestination(draft.destination)
+      if (Array.isArray(draft.interests)) setInterests(draft.interests.filter((x): x is string => typeof x === "string"))
+      if (typeof draft.numPersons === "number" && draft.numPersons >= 1) setNumPersons(draft.numPersons)
+      if (typeof draft.accommodationType === "string") setAccommodationType(draft.accommodationType)
+      if (Array.isArray(draft.perPersonBudget) && draft.perPersonBudget[0] != null) setPerPersonBudget([Number(draft.perPersonBudget[0])])
+      if (typeof draft.pace === "string") setPace(draft.pace)
+      if (typeof draft.disability === "boolean") setDisability(draft.disability)
+      if (typeof draft.dietary === "boolean") setDietary(draft.dietary)
+      if (draft.dateFrom && draft.dateTo) {
+        const from = new Date(draft.dateFrom as string)
+        const to = new Date(draft.dateTo as string)
+        if (!isNaN(from.getTime()) && !isNaN(to.getTime())) setDateRange({ from, to })
+      } else if (draft.dateFrom) {
+        const from = new Date(draft.dateFrom as string)
+        if (!isNaN(from.getTime())) setDateRange({ from, to: from })
+      }
+    }
+  }, [])
 
   const handleGenerate = async () => {
     setGenerateError(null)
     setIsGenerating(true)
+    const startDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
+    const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
+    saveDraft({
+      origin: origin.trim(),
+      destination: destination.trim(),
+      interests,
+      numPersons,
+      accommodationType,
+      perPersonBudget: [perPersonBudget[0]],
+      pace,
+      disability,
+      dietary,
+      dateFrom: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined,
+      dateTo: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : undefined,
+    })
     try {
       sessionStorage.setItem("itinerary_generating", "1")
-      const startDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
-      const endDate = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined
       const res = await generateItinerary({
         origin: origin.trim() || undefined,
         destination: destination.trim() || undefined,
         start_date: startDate,
         end_date: endDate,
-        budget: budget[0],
         per_person_budget: perPersonBudget[0],
         num_persons: numPersons,
         accommodation_type: accommodationType,
@@ -75,6 +147,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
       })
       if (res?.options?.length) {
         sessionStorage.removeItem("itinerary_generating")
+        clearDraft()
         try {
           await saveSavedPlan({
             origin: origin.trim() || 'Unknown',
@@ -92,6 +165,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
           destination: destination.trim() || 'Unknown',
           start_date: startDate,
           end_date: endDate,
+          suggested_days_for_trip: res.suggested_days_for_trip,
         })
       } else {
         sessionStorage.removeItem("itinerary_generating")
@@ -99,7 +173,9 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
       }
     } catch (err) {
       sessionStorage.removeItem("itinerary_generating")
-      setGenerateError(err instanceof Error ? err.message : "Failed to generate itineraries")
+      const msg = err instanceof Error ? err.message : "Failed to generate itineraries"
+      setGenerateError(msg)
+      setTimeout(() => errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
     } finally {
       sessionStorage.removeItem("itinerary_generating")
       setIsGenerating(false)
@@ -131,24 +207,26 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
           <div className="max-w-sm space-y-2 text-center">
             <p className="text-xl font-semibold text-foreground">Generating AI itineraries</p>
             <p className="text-sm text-muted-foreground">
-              The AI is building your plans. This often takes <strong>1–2 minutes</strong>. Please stay on this page and don’t refresh.
+              The AI is building your plans. This often takes <strong>8–10 minutes</strong>. Please stay on this page and don’t refresh.
             </p>
           </div>
         </div>
       )}
       {generateError && (
-        <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {generateError}
+        <div
+          ref={errorBannerRef}
+          className="sticky top-0 z-40 mb-4 flex flex-col gap-4 rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-sm text-destructive flex-1">{generateError}</p>
+          <Button
+            className="gap-2 shrink-0"
+            onClick={() => { setGenerateError(null); handleGenerate() }}
+          >
+            <RotateCcw className="h-4 w-4" />
+            Try again
+          </Button>
         </div>
       )}
-      <div className="mb-6 sm:mb-8 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-display text-balance sm:text-3xl">
-          Plan your perfect trip
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          Tell us about your travel preferences and our AI will craft personalized itineraries.
-        </p>
-      </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 lg:p-8">
         <div className="grid gap-5 sm:gap-6 md:grid-cols-2">
@@ -293,29 +371,6 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Total Budget */}
-          <div className="space-y-3">
-            <Label className="flex items-center justify-between text-sm font-medium">
-              <span className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Total Budget
-              </span>
-              <span className="tabular-nums text-foreground">${budget[0].toLocaleString()}</span>
-            </Label>
-            <Slider
-              value={budget}
-              onValueChange={setBudget}
-              max={20000}
-              min={500}
-              step={100}
-              className="py-1"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>$500</span>
-              <span>$20,000</span>
-            </div>
           </div>
 
           {/* Per Person Budget */}

@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import Login from '../pages/Login'
 import Register from '../pages/Register'
@@ -13,14 +14,28 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   const generating = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('itinerary_generating')
   if (generating) return children
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-primary/5 to-background">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10 animate-pulse">
+        <Compass className="h-7 w-7 text-primary" />
+      </div>
+      <p className="text-sm text-muted-foreground">Loading…</p>
+    </div>
+  )
   if (!user) return <Navigate to="/login" replace />
   return children
 }
 
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-primary/5 to-background">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10 animate-pulse">
+        <Compass className="h-7 w-7 text-primary" />
+      </div>
+      <p className="text-sm text-muted-foreground">Loading…</p>
+    </div>
+  )
   if (user) return <Navigate to="/" replace />
   return children
 }

@@ -105,7 +105,7 @@ export default function Quote() {
               {quote && (
                 <>
                   {/* Summary */}
-                  <div className="rounded-2xl border border-border bg-card p-5">
+                  <div className="rounded-2xl border border-border bg-card p-5 card-hover">
                     <h3 className="mb-4 text-sm font-semibold text-foreground">Price summary</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">

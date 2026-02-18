@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
-import { ItineraryTimeline } from '@/components/itinerary-timeline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,8 +12,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Sparkles, Check, Plus, Trash2, ExternalLink, Share2, Copy } from 'lucide-react'
+import { Sparkles, Check, Plus, Trash2, ExternalLink, Share2, Copy, Calendar } from 'lucide-react'
 import { generateItinerary, planWithPicks, createShareableTrip } from '@/lib/api'
+import { FlightsSection } from '@/components/flights-section'
+import { ItineraryExploreView } from '@/components/itinerary-explore-view'
 import { cn } from '@/lib/utils'
 
 function pickId(pick) {
@@ -25,7 +26,9 @@ export default function Plan() {
   const navigate = useNavigate()
   const location = useLocation()
   const [options, setOptions] = useState([])
+  const [suggestedDaysForTrip, setSuggestedDaysForTrip] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [generateError, setGenerateError] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   const [picks, setPicks] = useState([])
   const [customUrl, setCustomUrl] = useState('')
@@ -38,24 +41,41 @@ export default function Plan() {
   const [shareError, setShareError] = useState('')
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    const stateOptions = location.state?.options
-    if (Array.isArray(stateOptions) && stateOptions.length > 0) {
-      setOptions(stateOptions)
-      setSelectedId((prev) => (prev || stateOptions[0]?.id) ?? null)
-      setLoading(false)
-      return
-    }
+  const fetchPlans = useCallback(() => {
+    setGenerateError(null)
+    setLoading(true)
     generateItinerary({})
       .then((res) => {
         if (res?.options && Array.isArray(res.options)) {
           setOptions(res.options)
           setSelectedId((prev) => (prev || res.options[0]?.id) ?? null)
+          if (res.suggested_days_for_trip != null) setSuggestedDaysForTrip(res.suggested_days_for_trip)
+          else setSuggestedDaysForTrip(null)
+        } else {
+          setOptions([])
+          setSuggestedDaysForTrip(null)
         }
       })
-      .catch(() => setOptions([]))
+      .catch((err) => {
+        setOptions([])
+        setSuggestedDaysForTrip(null)
+        setGenerateError(err?.message || 'Failed to load itineraries')
+      })
       .finally(() => setLoading(false))
-  }, [location.state?.options])
+  }, [])
+
+  useEffect(() => {
+    const stateOptions = location.state?.options
+    if (Array.isArray(stateOptions) && stateOptions.length > 0) {
+      setOptions(stateOptions)
+      setSelectedId((prev) => (prev || stateOptions[0]?.id) ?? null)
+      if (location.state?.suggested_days_for_trip != null) setSuggestedDaysForTrip(location.state.suggested_days_for_trip)
+      else setSuggestedDaysForTrip(null)
+      setLoading(false)
+      return
+    }
+    fetchPlans()
+  }, [location.state?.options, location.state?.suggested_days_for_trip, fetchPlans])
 
   const addPick = useCallback((pick) => {
     const id = pickId(pick)
@@ -119,8 +139,9 @@ export default function Plan() {
   }
 
   const planMeta = location.state || {}
-  const planOrigin = planMeta.origin || 'Trip'
-  const planDestination = planMeta.destination || 'Destination'
+  const planOrigin = planMeta.origin || ''
+  const planDestination = planMeta.destination || ''
+  const planStartDate = planMeta.start_date || ''
 
   const handleShareOpen = async (open) => {
     setShareOpen(open)
@@ -157,7 +178,7 @@ export default function Plan() {
       <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
-        <div className="mb-6 sm:mb-8 text-center">
+        <div className="mb-6 sm:mb-8 text-center page-enter">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
             Choose or build your itinerary
           </h1>
@@ -165,6 +186,12 @@ export default function Plan() {
             Pick one of the three plans, or select activities and add your own places — then get an AI plan and quote.
           </p>
         </div>
+
+        {planOrigin && planDestination && (
+          <div className="mb-8 page-enter">
+            <FlightsSection origin={planOrigin} destination={planDestination} date={planStartDate} />
+          </div>
+        )}
 
         {loading ? (
           <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
@@ -174,53 +201,81 @@ export default function Plan() {
             <p className="text-lg font-medium text-foreground">Loading plans…</p>
             <p className="text-sm text-muted-foreground">Fetching your itineraries</p>
           </div>
+        ) : generateError && options.length === 0 ? (
+          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-8">
+            <p className="text-center text-sm text-destructive">{generateError}</p>
+            <Button onClick={fetchPlans}>Try again</Button>
+          </div>
         ) : (
-          <div className="mb-6 sm:mb-8 grid gap-4 sm:gap-6 md:grid-cols-3 md:items-stretch">
-            {options.map((option, index) => {
-              const isSelected = selectedId === option.id
-              return (
-                <div
-                  key={option.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedId(option.id)}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelectedId(option.id)}
-                  className={cn(
-                    'flex h-full min-h-[320px] sm:min-h-[440px] flex-col rounded-2xl border-2 bg-card p-4 sm:p-5 transition-all hover:shadow-lg cursor-pointer touch-manipulation',
-                    isSelected ? 'border-primary shadow-lg shadow-primary/10' : 'border-border hover:border-primary/30'
-                  )}
-                >
-                  <div className="mb-3 flex shrink-0 items-center justify-between">
-                    <h3 className="font-semibold text-foreground">Plan {index + 1}</h3>
-                    {isSelected && (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                      </div>
+          <div className="mb-6 sm:mb-8 space-y-6 page-enter">
+            {suggestedDaysForTrip != null && (
+              <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">
+                    Suggested trip length: {suggestedDaysForTrip} {suggestedDaysForTrip === 1 ? 'day' : 'days'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">AI-recommended duration for {planOrigin && planDestination ? `${planOrigin} → ${planDestination}` : 'this trip'}</p>
+                </div>
+              </div>
+            )}
+            {/* Plan selector pills */}
+            <div className="flex flex-wrap gap-2">
+              {options.map((option, index) => {
+                const isSelected = selectedId === option.id
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedId(option.id)}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-left transition-all',
+                      isSelected ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card hover:border-primary/30'
                     )}
-                  </div>
-                  <p className="mb-2 shrink-0 text-sm text-muted-foreground">{option.label}</p>
-                  <div className="mb-3 shrink-0">
-                    <span className="text-xl font-bold tabular-nums text-foreground">
-                      ${(option.total_estimated_cost ?? 0).toLocaleString()}
-                    </span>
-                    <span className="text-sm text-muted-foreground"> estimated</span>
-                  </div>
-                  <div className="min-h-0 max-h-[280px] sm:max-h-[360px] flex-1 overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-muted/30 p-3 sm:p-4">
-                    <ItineraryTimeline option={option} onAddPick={addPick} />
-                  </div>
-                  <Button
-                    variant={isSelected ? 'default' : 'outline'}
-                    className="mt-4 w-full min-h-[44px]"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedId(option.id)
-                    }}
                   >
-                    {isSelected ? 'Selected' : 'Choose Plan'}
-                  </Button>
+                    <span className="font-semibold">Plan {index + 1}</span>
+                    <span className="text-sm text-muted-foreground">{option.label}</span>
+                    <span className="font-bold tabular-nums text-primary">${(option.total_estimated_cost ?? 0).toLocaleString()}</span>
+                    {isSelected && <Check className="h-4 w-4 text-primary" />}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* imean.ai style: Where to Go / Eat / Stay / Flight tabs + map */}
+            {(() => {
+              const selected = options.find((o) => o.id === (selectedId || options[0]?.id)) || options[0]
+              if (!selected) return null
+              return (
+                <div className={cn(
+                  'rounded-2xl border-2 p-4 sm:p-6 transition-colors',
+                  selectedId === selected.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                )}>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground">{selected.label}</h2>
+                    <Button
+                      variant={selectedId === selected.id ? 'secondary' : 'default'}
+                      className={cn(
+                        'gap-1.5',
+                        selectedId === selected.id && 'ring-2 ring-primary ring-offset-2'
+                      )}
+                      onClick={() => setSelectedId(selected.id)}
+                    >
+                      <Check className="h-4 w-4" />
+                      {selectedId === selected.id ? 'Selected' : 'Choose this plan'}
+                    </Button>
+                  </div>
+                  <ItineraryExploreView
+                    option={selected}
+                    destination={planDestination}
+                    origin={planOrigin}
+                    onAddPick={addPick}
+                  />
                 </div>
               )
-            })}
+            })()}
           </div>
         )}
 
@@ -298,7 +353,12 @@ export default function Plan() {
           )}
 
           {customPlanError && (
-            <p className="mb-4 text-sm text-destructive">{customPlanError}</p>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-destructive">{customPlanError}</p>
+              <Button variant="outline" size="sm" onClick={() => { setCustomPlanError(null); handleGetAIPlanAndQuote() }}>
+                Try again
+              </Button>
+            </div>
           )}
           <div className="flex flex-wrap items-center gap-3">
             <Button
