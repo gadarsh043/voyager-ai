@@ -19,6 +19,7 @@ import { COUNTRY_NAMES } from "@/lib/countries"
 import { generateItinerary, saveSavedPlan } from "@/lib/api"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
+import { CityAutocomplete } from "@/components/city-autocomplete"
 
 interface TripInputFormProps {
   onSubmit: (result?: { options: unknown[] }) => void
@@ -236,11 +237,11 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               <MapPin className="h-4 w-4 text-primary" />
               Travel from
             </Label>
-            <Input
-              placeholder="e.g. Houston, Dallas, London"
+            <CityAutocomplete
+              id="origin"
               value={origin}
-              onChange={(e) => setOrigin(e.target.value)}
-              className="h-11 min-h-[44px]"
+              onChange={setOrigin}
+              placeholder="e.g. Houston, Dallas, London"
             />
           </div>
 
@@ -250,11 +251,11 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
               <MapPin className="h-4 w-4 text-primary" />
               Destination
             </Label>
-            <Input
-              placeholder="e.g. Dallas, New York, Tokyo"
+            <CityAutocomplete
+              id="destination"
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="h-11 min-h-[44px]"
+              onChange={setDestination}
+              placeholder="e.g. Dallas, New York, Tokyo"
             />
           </div>
 
@@ -450,7 +451,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
 
         {/* Generate Button */}
         <div className="mt-8">
-            <Button
+          <Button
             onClick={handleGenerate}
             disabled={isGenerating}
             className="h-12 min-h-[48px] w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 touch-manipulation"

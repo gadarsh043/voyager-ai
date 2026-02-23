@@ -29,16 +29,22 @@ export function PlacesMap({ destination, places, className = "" }: PlacesMapProp
   const placesKey = places.map((p) => p.name).join("|")
 
   useEffect(() => {
-    if (!key || !mapRef.current) return
+    if (!key) return
 
     let cancelled = false
     setStatus("loading")
 
     const init = async () => {
       const ok = await loadGoogleMaps()
-      if (!ok || cancelled || !mapRef.current) {
+      if (cancelled) return
+      if (!ok) {
         setStatus("error")
         setErrorMsg("Maps JavaScript API unavailable. Enable it in Google Cloud Console and ensure billing is set up.")
+        return
+      }
+      if (!mapRef.current) {
+        setStatus("error")
+        setErrorMsg("Map container not ready.")
         return
       }
 
@@ -65,10 +71,12 @@ export function PlacesMap({ destination, places, className = "" }: PlacesMapProp
 
       const centerOn = destination || (places[0]?.name ?? "")
       const centerResult = await geocode(centerOn)
+      if (cancelled || !mapRef.current) return
       const center = centerResult ? { lat: centerResult.lat(), lng: centerResult.lng() } : { lat: 0, lng: 0 }
 
+      const mapEl = mapRef.current
       const MapClass = g.maps.Map as new (el: HTMLDivElement, opts: { center: { lat: number; lng: number }; zoom: number }) => { fitBounds: (b: unknown, o?: unknown) => void }
-      const map = new MapClass(mapRef.current, { center, zoom: 12 }) as { fitBounds: (b: unknown, o?: unknown) => void }
+      const map = new MapClass(mapEl, { center, zoom: 12 }) as { fitBounds: (b: unknown, o?: unknown) => void }
       mapInstanceRef.current = map
 
       const LatLngBounds = g.maps.LatLngBounds as new () => { extend: (loc: { lat: () => number; lng: () => number }) => void }

@@ -3,14 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
 import { TripInputForm } from '@/components/trip-input-form'
 import { JoinTrip } from '@/components/join-trip'
-import { DestinationsExplorer } from '@/components/destinations-explorer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { MapPin, Calendar } from 'lucide-react'
 import { getTrips, getSavedPlans, getBookingsForUser } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 
-/** Large feature cards with full-bleed images - imean.ai / Mindtrip style */
+/** Large feature cards for the 'Why Use an AI Trip Planner' section */
 const FEATURE_CARDS = [
   {
     id: 'find-flights',
@@ -33,6 +32,19 @@ const FEATURE_CARDS = [
     image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80',
     action: 'focus-trip',
   },
+]
+
+/** Popular destinations to inspire travel - static, no API call needed */
+const INSPIRATION_DESTINATIONS = [
+  { id: 'tokyo', name: 'Tokyo', country: 'Japan', flag: '🇯🇵', budget: 'from $1,800', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80' },
+  { id: 'paris', name: 'Paris', country: 'France', flag: '🇫🇷', budget: 'from $1,500', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' },
+  { id: 'bali', name: 'Bali', country: 'Indonesia', flag: '🇮🇩', budget: 'from $900', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80' },
+  { id: 'new-york', name: 'New York', country: 'USA', flag: '🇺🇸', budget: 'from $1,200', image: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80' },
+  { id: 'rome', name: 'Rome', country: 'Italy', flag: '🇮🇹', budget: 'from $1,100', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80' },
+  { id: 'dubai', name: 'Dubai', country: 'UAE', flag: '🇦🇪', budget: 'from $1,400', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80' },
+  { id: 'barcelona', name: 'Barcelona', country: 'Spain', flag: '🇪🇸', budget: 'from $1,000', image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80' },
+  { id: 'kyoto', name: 'Kyoto', country: 'Japan', flag: '🇯🇵', budget: 'from $1,600', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80' },
+  { id: 'maldives', name: 'Maldives', country: 'Maldives', flag: '🇲🇻', budget: 'from $2,500', image: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80' },
 ]
 
 export default function Main() {
@@ -126,13 +138,50 @@ export default function Main() {
               <TripInputForm onSubmit={handleGenerateDone} />
             </div>
 
-            {/* Explore destinations - real places from API */}
+            {/* Travel Inspiration grid */}
             <div className="mb-16 pt-12 border-t border-border">
-              <div className="mb-6 text-center">
-                <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Explore destinations</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Real places to inspire your next trip</p>
+              <div className="mb-8 text-center">
+                <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Travel Inspiration</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Click any destination to plan your trip</p>
               </div>
-              <DestinationsExplorer hideHeading />
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3">
+                {INSPIRATION_DESTINATIONS.map((dest) => (
+                  <div
+                    key={dest.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveTab('new-trip')
+                      setTimeout(() => {
+                        document.getElementById('trip-form')?.scrollIntoView({ behavior: 'smooth' })
+                        // Prefill destination via navigate state so TripInputForm can pick it up
+                      }, 100)
+                      handleQuickAction('focus-trip')
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleQuickAction('focus-trip')}
+                    className="group relative overflow-hidden rounded-2xl border border-border bg-muted aspect-[4/3] cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
+                    <img
+                      src={dest.image}
+                      alt={dest.name}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    {/* Budget badge */}
+                    <div className="absolute top-3 right-3 rounded-full bg-black/50 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-white/90">
+                      {dest.budget}
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg leading-none">{dest.flag}</span>
+                        <h3 className="font-bold text-white text-base drop-shadow-md">{dest.name}</h3>
+                      </div>
+                      <p className="mt-0.5 text-xs text-white/80">{dest.country}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Why Use an AI Trip Planner - at bottom */}
