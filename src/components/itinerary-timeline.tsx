@@ -20,7 +20,7 @@ function formatTime(s) {
   return part.slice(0, 10) + " " + part.slice(11, 16)
 }
 
-function formatDate(s) {
+function formatDate(s: string | undefined | null) {
   if (!s || typeof s !== "string") return "—"
   return s.slice(0, 10)
 }
@@ -35,6 +35,7 @@ export interface ItineraryOptionForTimeline {
     days?: Array<{
       day?: number
       activities?: Array<{
+        name?: string
         start_from?: string
         start_time?: string
         reach_time?: string
@@ -95,7 +96,7 @@ export function ItineraryTimeline({ option, className, onAddPick }: ItineraryTim
             <div className="min-w-0 flex-1 pb-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Hotel</p>
               <div className="flex gap-3">
-                {h.image_url && (
+                {h.image_url ? (
                   <a
                     href={h.google_maps_url || "#"}
                     target="_blank"
@@ -104,6 +105,10 @@ export function ItineraryTimeline({ option, className, onAddPick }: ItineraryTim
                   >
                     <img src={h.image_url} alt="" className="h-16 w-20 object-cover" />
                   </a>
+                ) : (
+                  <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30">
+                    <Hotel className="h-6 w-6 opacity-40" />
+                  </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-foreground">{h.name || "—"}</p>
@@ -162,7 +167,7 @@ export function ItineraryTimeline({ option, className, onAddPick }: ItineraryTim
                     <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
                       <div className="flex gap-3">
-                        {act.image_url && (
+                        {act.image_url ? (
                           <a
                             href={act.google_maps_url || "#"}
                             target="_blank"
@@ -171,6 +176,10 @@ export function ItineraryTimeline({ option, className, onAddPick }: ItineraryTim
                           >
                             <img src={act.image_url} alt="" className="h-14 w-20 object-cover" />
                           </a>
+                        ) : (
+                          <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30">
+                            <MapPin className="h-5 w-5 opacity-40" />
+                          </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground">{act.start_from || "—"} → next</p>

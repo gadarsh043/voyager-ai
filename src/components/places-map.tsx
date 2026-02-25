@@ -187,14 +187,14 @@ export function PlacesMap({ destination, places, className = "" }: PlacesMapProp
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-border bg-muted/30 ${className}`}>
+    <div className={`relative overflow-hidden border border-border bg-muted/30 ${className}`}>
       <div className="flex h-8 items-center gap-2 border-b border-border bg-card/50 px-3">
         <MapPin className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground">
           {places.length > 0 ? `${places.length + 1} places on map` : `Explore ${destination}`}
         </span>
       </div>
-      <div className="relative h-[380px] min-h-[300px]">
+      <div className="relative min-h-[300px]" style={{ height: "100%" }}>
         {status === "loading" && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/50">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

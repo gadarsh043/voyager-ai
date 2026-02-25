@@ -20,72 +20,6 @@ export async function getDestinations() {
   return res.json()
 }
 
-/** Pool of unique Unsplash travel/destination photo IDs for fallback images */
-const PLACE_IMAGE_POOL = [
-  '1540959733332-eab4deabeeaf', // Tokyo
-  '1502602898657-3e91760cbb34', // Paris
-  '1537996194471-e657df975ab4', // Bali
-  '1496442226666-8d4d0e62e6e9', // New York
-  '1552832230-c0197dd311b5', // Rome
-  '1583422409516-2895a77efded', // Barcelona
-  '1488646953014-85cb44e25828', // travel
-  '1527838832700-5059252407fa', // London
-  '1518558811040-8ec73e59790f', // beach
-  '1493246507139-91e8fad9978e', // mountains
-  '1476514525535-07fb3b4ae5f1', // lake
-  '1506929562872-bb421503ef21', // tropical
-  '1469851693024-abbcab42cda1', // islands
-  '1507003211169-0a1dd7228f2d', // city
-  '1519681393784-d120267933ba', // scenery
-  '1501785884341-7196e293eaa3', // nature
-  '1472214103451-9374bd1c798e', // landscape
-  '1507525428034-b723cf961d3e', // beach sunset
-  '1514525253161-7a46d19cd819', // night city
-  '1544568100-847a948585b9', // mountains snow
-  '1476514525535-07fb3b4ae5f1', // coast
-  '1559128012-7f6cf1929852', // canyon
-  '1559827260-dc66d52bef19', // cityscape
-  '1545324418-cc1a3fa10c00', // architecture
-]
-
-/** Simple string hash for deterministic image selection */
-function hashString(str) {
-  let h = 0
-  for (let i = 0; i < (str || '').length; i++) {
-    h = (h << 5) - h + str.charCodeAt(i)
-    h = h & h
-  }
-  return Math.abs(h)
-}
-
-/**
- * Get a unique image URL for a place. Uses Unsplash API when VITE_UNSPLASH_ACCESS_KEY is set,
- * otherwise picks from a pool of travel photos based on place name hash.
- * @param {string} query - Place name or search query (e.g. "Tokyo, Japan")
- * @returns {Promise<string>} Image URL
- */
-export async function getPlaceImage(query) {
-  const key = import.meta.env.VITE_UNSPLASH_ACCESS_KEY
-  if (key && query) {
-    try {
-      const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,
-        { headers: { Authorization: `Client-ID ${key}` } }
-      )
-      if (res.ok) {
-        const data = await res.json()
-        const img = data?.results?.[0]
-        if (img?.urls?.regular) return img.urls.regular
-      }
-    } catch {
-      // fall through to pool
-    }
-  }
-  const idx = hashString(query) % PLACE_IMAGE_POOL.length
-  const id = PLACE_IMAGE_POOL[idx]
-  return `https://images.unsplash.com/photo-${id}?w=600&h=400&fit=crop&q=80`
-}
-
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
 
 // --- Mock data (trips, itinerary, quote only; auth is Supabase) ---
@@ -342,13 +276,13 @@ function buildQuoteFromOption(option) {
   const hotelList = dp.hotel_stay || []
   const hotels = hotelList.length
     ? hotelList.map((h, i) => {
-        const each = Math.round(hotelTotal / hotelList.length)
-        const amount = i < hotelList.length - 1 ? each : hotelTotal - each * (hotelList.length - 1)
-        return {
-          description: `${h.name}${h.check_in || h.check_out ? `, ${[h.check_in, h.check_out].filter(Boolean).join(' – ')}` : ''}`.trim(),
-          amount,
-        }
-      })
+      const each = Math.round(hotelTotal / hotelList.length)
+      const amount = i < hotelList.length - 1 ? each : hotelTotal - each * (hotelList.length - 1)
+      return {
+        description: `${h.name}${h.check_in || h.check_out ? `, ${[h.check_in, h.check_out].filter(Boolean).join(' – ')}` : ''}`.trim(),
+        amount,
+      }
+    })
     : hotelTotal > 0 ? [{ description: 'Accommodation', amount: hotelTotal }] : []
   const activities = []
   if (dp.days?.length && activityTotal > 0) {
@@ -440,18 +374,17 @@ export async function generateItinerary(params) {
     body: JSON.stringify(params ?? {}),
   })
   if (!res.ok) {
-    let message = `Itinerary API error ${res.status}`
-    const text = await res.text()
-    if (text) {
-      try {
-        const body = JSON.parse(text)
-        if (body?.detail && typeof body.detail === 'string') message = body.detail
-        else message = text
-      } catch {
-        message = text
+    try {
+      const errData = await res.json()
+      if (errData && errData.detail) {
+        throw new Error(errData.detail)
+      }
+    } catch (e) {
+      if (e.message !== 'Unexpected end of JSON input' && e.message !== 'Failed to parse JSON') {
+        throw e // Re-throw the detail error if it was caught
       }
     }
-    throw new Error(message)
+    throw new Error('Something went wrong while generating your itinerary. Please try again.')
   }
   const data = await res.json()
   if (!data || !Array.isArray(data.options)) {
@@ -486,17 +419,7 @@ export async function planWithPicks(payload) {
   })
   if (!res.ok) {
     let message = `Plan-with-picks API error ${res.status}`
-    const text = await res.text()
-    if (text) {
-      try {
-        const body = JSON.parse(text)
-        if (body?.detail && typeof body.detail === 'string') message = body.detail
-        else message = text
-      } catch {
-        message = text
-      }
-    }
-    throw new Error(message)
+    throw new Error('Something went wrong building your plan. Please try again.')
   }
   const data = await res.json()
   if (!data || !data.option_id) {
@@ -529,8 +452,7 @@ export async function getQuote(option) {
     body: JSON.stringify({ option: option || {} }),
   })
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || `Quote API error ${res.status}`)
+    throw new Error('Something went wrong while fetching the quote. Please try again.')
   }
   return res.json()
 }
@@ -619,9 +541,9 @@ export async function createShareableTrip(payload) {
       options,
     })
     if (!error) return { invite_code }
-    if (error.code !== '23505') throw new Error(error.message) // 23505 = unique violation, retry
+    if (error.code !== '23505') throw new Error('Something went wrong creating a shareable trip. Please try again.') // 23505 = unique violation, retry
   }
-  throw new Error('Could not generate unique invite code')
+  throw new Error('Something went wrong creating a shareable trip. Please try again.')
 }
 
 /**
@@ -639,7 +561,7 @@ export async function joinTripByCode(inviteCode) {
     .select('origin, destination, start_date, end_date, options')
     .eq('invite_code', code)
     .maybeSingle()
-  if (fetchError) throw new Error(fetchError.message)
+  if (fetchError) throw new Error('Something went wrong finding that trip. Please try again.')
   if (!trip) throw new Error('Invalid or expired invite code')
   const { error: insertError } = await supabase.from('user_plans').insert({
     user_id: user.id,
@@ -649,7 +571,7 @@ export async function joinTripByCode(inviteCode) {
     end_date: trip.end_date,
     options: trip.options,
   })
-  if (insertError) throw new Error(insertError.message)
+  if (insertError) throw new Error('Something went wrong adding that trip to your plans. Please try again.')
   return { success: true }
 }
 
@@ -742,9 +664,9 @@ function buildTripDocumentContent(option, quote, origin = 'Origin', destination 
     lines.push('DAILY ACTIVITIES')
     dp.days.forEach((d) => {
       lines.push(`Day ${d.day}`)
-      ;(d.activities || []).forEach((a) => {
-        lines.push(`  • ${a.start_from || ''} ${a.start_time || ''} – ${a.time_to_spend || ''} ${a.name || ''}`.trim())
-      })
+        ; (d.activities || []).forEach((a) => {
+          lines.push(`  • ${a.start_from || ''} ${a.start_time || ''} – ${a.time_to_spend || ''} ${a.name || ''}`.trim())
+        })
       lines.push('')
     })
   }
@@ -757,7 +679,7 @@ function buildTripDocumentContent(option, quote, origin = 'Origin', destination 
   lines.push('---')
   lines.push('SUGGESTIONS')
   lines.push('')
-  ;(po.suggestions || []).forEach((s) => lines.push(`• ${s}`))
+    ; (po.suggestions || []).forEach((s) => lines.push(`• ${s}`))
   if (po.redemption_tips?.length) {
     lines.push('')
     lines.push('Redemption tips:')
@@ -820,7 +742,7 @@ export async function generateTripDocument(params) {
       },
       body: JSON.stringify({ option: option || {}, quote: quote || {}, origin: origin || '', destination: destination || '' }),
     })
-    if (!res.ok) throw new Error(await res.text() || 'Trip document API error')
+    if (!res.ok) throw new Error('Something went wrong generating your trip document. Please try again.')
     return res.json()
   }
   await delay(800)
@@ -833,23 +755,40 @@ export async function generateTripDocument(params) {
  * @returns {Promise<{ booking_id: string, trip_document_id: string }>}
  */
 export async function createBooking(params) {
-  const { user_plan_id, content } = params || {}
+  const { user_plan_id, content, invite_code: providedCode, origin, destination, start_date, end_date, options } = params || {}
   if (!content) throw new Error('Document content is required')
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Must be logged in to book')
+
+  let final_invite_code = providedCode
+  if (!final_invite_code && origin && destination && options?.length > 0) {
+    try {
+      const res = await createShareableTrip({ origin, destination, start_date, end_date, options })
+      final_invite_code = res.invite_code
+    } catch (e) {
+      console.warn('Could not auto-create shareable trip', e)
+    }
+  }
+
   const { data: docRow, error: docErr } = await supabase
     .from('trip_documents')
     .insert({ user_id: user.id, content })
     .select('id')
     .single()
-  if (docErr) throw new Error(docErr.message)
-  const { data: bookRow, error: bookErr } = await supabase
-    .from('bookings')
-    .insert({ user_id: user.id, user_plan_id: user_plan_id || null, trip_document_id: docRow.id })
-    .select('id')
-    .single()
-  if (bookErr) throw new Error(bookErr.message)
-  return { booking_id: bookRow.id, trip_document_id: docRow.id }
+  if (docErr) throw new Error('Something went wrong saving your document. Please try again.')
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const invite_code = final_invite_code || generateInviteCode(6)
+    const { data: bookRow, error: bookErr } = await supabase
+      .from('bookings')
+      .insert({ user_id: user.id, user_plan_id: user_plan_id || null, trip_document_id: docRow.id, invite_code })
+      .select('id, invite_code')
+      .single()
+    if (!bookErr) {
+      return { booking_id: bookRow.id, trip_document_id: docRow.id, invite_code: bookRow.invite_code }
+    }
+    if (bookErr.code !== '23505' || final_invite_code) throw new Error('Something went wrong confirming your booking. Please try again.')
+  }
+  throw new Error('Something went wrong confirming your booking. Please try again.')
 }
 
 /**
@@ -863,7 +802,7 @@ export async function getBooking(bookingId) {
   if (!user) throw new Error('Must be logged in')
   const { data: booking, error: bookErr } = await supabase
     .from('bookings')
-    .select('id, user_plan_id, trip_document_id, created_at')
+    .select('id, user_plan_id, trip_document_id, created_at, invite_code')
     .eq('id', bookingId)
     .eq('user_id', user.id)
     .maybeSingle()

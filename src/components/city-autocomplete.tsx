@@ -215,7 +215,7 @@ export function CityAutocomplete({
             "absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
             "animate-in fade-in-0 zoom-in-95 slide-in-from-top-1"
           )}
-          style={{ background: "white" }}
+          style={{ background: "rgba(17, 24, 39, 0.95)" }}
         >
           {suggestions.map((feature, i) => {
             const label = formatSuggestion(feature.properties)

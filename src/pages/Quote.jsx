@@ -14,6 +14,9 @@ export default function Quote() {
   const userPlanId = location.state?.user_plan_id
   const origin = location.state?.origin
   const destination = location.state?.destination
+  const startDate = location.state?.start_date
+  const endDate = location.state?.end_date
+  const shareCode = location.state?.shareCode
   const [quote, setQuote] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -55,7 +58,16 @@ export default function Quote() {
         origin: inferredOrigin,
         destination: inferredDestination,
       })
-      const { booking_id } = await createBooking({ user_plan_id: userPlanId || undefined, content })
+      const { booking_id } = await createBooking({
+        user_plan_id: userPlanId || undefined,
+        content,
+        invite_code: shareCode,
+        origin: inferredOrigin,
+        destination: inferredDestination,
+        start_date: startDate,
+        end_date: endDate,
+        options: [selectedOption]
+      })
       navigate('/success', { state: { booking_id } })
     } catch (e) {
       setBookingError(e?.message || 'Booking failed')

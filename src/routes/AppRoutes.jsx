@@ -7,7 +7,6 @@ import Main from '../pages/Main'
 import Plan from '../pages/Plan'
 import Quote from '../pages/Quote'
 import Success from '../pages/Success'
-import Booking from '../pages/Booking'
 import Profile from '../pages/Profile'
 
 function ProtectedRoute({ children }) {
@@ -50,7 +49,7 @@ export default function AppRoutes() {
       <Route path="/plan" element={<ProtectedRoute><Plan /></ProtectedRoute>} />
       <Route path="/quote" element={<ProtectedRoute><Quote /></ProtectedRoute>} />
       <Route path="/success" element={<ProtectedRoute><Success /></ProtectedRoute>} />
-      <Route path="/booking/:id" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
+      <Route path="/booking/:id" element={<ProtectedRoute><Success /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

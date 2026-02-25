@@ -20,9 +20,17 @@ import { generateItinerary, saveSavedPlan } from "@/lib/api"
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { CityAutocomplete } from "@/components/city-autocomplete"
+import { SnakeGame } from "@/components/snake-game"
 
 interface TripInputFormProps {
-  onSubmit: (result?: { options: unknown[] }) => void
+  onSubmit: (result?: {
+    options: unknown[];
+    origin?: string;
+    destination?: string;
+    start_date?: string;
+    end_date?: string;
+    suggested_days_for_trip?: number;
+  }) => void
 }
 
 const paceOptions = [
@@ -174,7 +182,7 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
       }
     } catch (err) {
       sessionStorage.removeItem("itinerary_generating")
-      const msg = err instanceof Error ? err.message : "Failed to generate itineraries"
+      const msg = err instanceof Error ? err.message : "Something went wrong generating your itinerary. Please try again."
       setGenerateError(msg)
       setTimeout(() => errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
     } finally {
@@ -198,279 +206,300 @@ export function TripInputForm({ onSubmit }: TripInputFormProps) {
     )
   }
 
+  // Derived display strings
+  const dateLabel = dateRange?.from
+    ? dateRange.to
+      ? `${format(dateRange.from, "MMM d")} – ${format(dateRange.to, "MMM d, yyyy")}`
+      : format(dateRange.from, "MMM d, yyyy")
+    : ""
+
+  // Field wrapper style shared across all inputs/selects
+  const fieldCls = "w-full h-12 pl-10 pr-4 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
+  const selectCls = "w-full h-12 pl-10 pr-8 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm appearance-none"
+  const iconCls = "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+  const chevronCls = "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground"
+  const labelCls = "block text-xs font-semibold text-muted-foreground mb-1.5 ml-0.5"
+
   return (
-    <div className="relative mx-auto max-w-3xl">
+    <div className="relative w-full">
       {isGenerating && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background backdrop-blur-sm px-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10">
-            <span className="inline-flex h-9 w-9 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-          </div>
-          <div className="max-w-sm space-y-2 text-center">
-            <p className="text-xl font-semibold text-foreground">Generating AI itineraries</p>
-            <p className="text-sm text-muted-foreground">
-              The AI is building your plans. This often takes <strong>8–10 minutes</strong>. Please stay on this page and don’t refresh.
-            </p>
-          </div>
+        <div className="flex flex-col items-center justify-center w-full py-4 min-h-[400px]">
+          <SnakeGame destination={destination} />
         </div>
       )}
-      {generateError && (
+
+      {!isGenerating && generateError && (
         <div
           ref={errorBannerRef}
           className="sticky top-0 z-40 mb-4 flex flex-col gap-4 rounded-xl border-2 border-destructive/60 bg-destructive/15 p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between"
         >
           <p className="text-sm text-destructive flex-1">{generateError}</p>
-          <Button
-            className="gap-2 shrink-0"
-            onClick={() => { setGenerateError(null); handleGenerate() }}
-          >
+          <Button className="gap-2 shrink-0" onClick={() => { setGenerateError(null); handleGenerate() }}>
             <RotateCcw className="h-4 w-4" />
             Try again
           </Button>
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 lg:p-8">
-        <div className="grid gap-5 sm:gap-6 md:grid-cols-2">
-          {/* From / Origin (city or place) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-primary" />
-              Travel from
-            </Label>
-            <CityAutocomplete
-              id="origin"
-              value={origin}
-              onChange={setOrigin}
-              placeholder="e.g. Houston, Dallas, London"
-            />
+      {!isGenerating && (
+        <form className="flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); handleGenerate() }}>
+          {/* Row 1: Origin | Destination | Trip Dates | No. of Persons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Origin */}
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Origin</label>
+              <div className="relative flex items-center">
+                <MapPin className={iconCls} />
+                <CityAutocomplete
+                  id="origin"
+                  value={origin}
+                  onChange={setOrigin}
+                  placeholder="Starting Point"
+                  className={fieldCls}
+                />
+              </div>
+            </div>
+
+            {/* Destination */}
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Destination</label>
+              <div className="relative flex items-center">
+                <MapPin className={cn(iconCls, "text-primary")} />
+                <CityAutocomplete
+                  id="destination"
+                  value={destination}
+                  onChange={setDestination}
+                  placeholder="Where to?"
+                  className={fieldCls}
+                />
+              </div>
+            </div>
+
+            {/* Trip Dates */}
+            <div className="flex flex-col gap-1.5">
+              <label className={labelCls}>Trip Dates</label>
+              <div className="relative flex items-center">
+                <CalendarDays className={iconCls} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(fieldCls, "text-left cursor-pointer", !dateRange && "text-muted-foreground/60")}
+                    >
+                      {dateLabel || "Add dates"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 max-w-[min(100vw-2rem,380px)] sm:max-w-none" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={new Date()}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={isMobile ? 1 : 2}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Number of Persons */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="num-persons" className={labelCls}>Number of Persons</label>
+              <div className="relative flex items-center">
+                <svg className={cn(iconCls, "h-4 w-4")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.768-.231-1.48-.634-2.057M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.768.231-1.48.634-2.057M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <input
+                  id="num-persons"
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={numPersons}
+                  onChange={(e) => setNumPersons(Number(e.target.value) || 1)}
+                  className={fieldCls}
+                  placeholder="2 Travelers"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Destination (city or place) */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4 text-primary" />
-              Destination
-            </Label>
-            <CityAutocomplete
-              id="destination"
-              value={destination}
-              onChange={setDestination}
-              placeholder="e.g. Dallas, New York, Tokyo"
-            />
-          </div>
-
-          {/* Interests */}
-          <div className="space-y-2 md:col-span-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Interests
-            </Label>
-            <div className="flex flex-wrap gap-3">
-              {INTEREST_OPTIONS.map((option) => {
-                const isSelected = interests.includes(option)
-                return (
+          {/* Row 2: Interests | Accommodation */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Interests (spans 2 columns) */}
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <label className={labelCls}>Travel Interests</label>
+              <div className="flex flex-wrap gap-2">
+                {INTEREST_OPTIONS.map((option: string) => (
                   <Button
                     key={option}
                     type="button"
+                    variant={interests.includes(option) ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn("h-9 px-3 text-xs sm:text-sm font-medium transition-colors", interests.includes(option) && "bg-primary text-primary-foreground")}
                     onClick={() => handleToggleInterest(option)}
-                    variant={isSelected ? "default" : "outline"}
-                    aria-pressed={isSelected}
-                    className="h-11 min-h-[44px] px-4 touch-manipulation"
                   >
                     {option}
                   </Button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Number of persons */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">No. of persons</Label>
-            <Input
-              type="number"
-              min={1}
-              max={20}
-              value={numPersons}
-              onChange={(e) => setNumPersons(Number(e.target.value) || 1)}
-              className="h-11"
-            />
-          </div>
-
-          {/* Accommodation type */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Accommodation</Label>
-            <Select value={accommodationType} onValueChange={setAccommodationType}>
-              <SelectTrigger className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hotel">Hotel</SelectItem>
-                <SelectItem value="hostel">Hostel</SelectItem>
-                <SelectItem value="apartment">Apartment</SelectItem>
-                <SelectItem value="luxury">Luxury</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date Range */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <CalendarDays className="h-4 w-4 text-primary" />
-              Trip Dates
-            </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "h-11 w-full justify-start text-left font-normal",
-                    !dateRange && "text-muted-foreground"
-                  )}
-                >
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "MMM d")} - {format(dateRange.to, "MMM d, yyyy")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "MMM d, yyyy")
-                    )
-                  ) : (
-                    "Select date range"
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 max-w-[min(100vw-2rem,380px)] sm:max-w-none" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={new Date()}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={isMobile ? 1 : 2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Passport Origin */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <Globe className="h-4 w-4 text-primary" />
-              Passport Origin
-            </Label>
-            <Select value={passport} onValueChange={setPassport}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRY_NAMES.map((name: string) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Per Person Budget */}
-          <div className="space-y-3">
-            <Label className="flex items-center justify-between text-sm font-medium">
-              <span className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Per Person
-              </span>
-              <span className="tabular-nums text-foreground">${perPersonBudget[0].toLocaleString()}</span>
-            </Label>
-            <Slider
-              value={perPersonBudget}
-              onValueChange={setPerPersonBudget}
-              max={10000}
-              min={200}
-              step={50}
-              className="py-1"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>$200</span>
-              <span>$10,000</span>
+              </div>
             </div>
-          </div>
 
-          {/* Trip Pace */}
-          <div className="space-y-3 md:col-span-2">
-            <Label className="flex items-center gap-2 text-sm font-medium">
-              <Gauge className="h-4 w-4 text-primary" />
-              Trip Pace
-            </Label>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {paceOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setPace(option.value)}
-                  className={cn(
-                    "flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl border-2 px-3 py-3 text-center transition-all touch-manipulation sm:px-4",
-                    pace === option.value
-                      ? "border-primary bg-accent text-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-muted"
-                  )}
+            {/* Accommodation (takes 1 column) */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="accommodation-select" className={labelCls}>Accommodation</label>
+              <div className="relative flex items-center">
+                <svg className={iconCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <select
+                  id="accommodation-select"
+                  className={selectCls}
+                  value={accommodationType}
+                  onChange={(e) => setAccommodationType(e.target.value)}
                 >
-                  <span className="text-sm font-semibold">{option.label}</span>
-                  <span className="text-xs">{option.description}</span>
-                </button>
-              ))}
+                  <option value="hotel">Hotel</option>
+                  <option value="hostel">Hostel</option>
+                  <option value="resort">Resort</option>
+                  <option value="apartment">Vacation Rental</option>
+                </select>
+                <svg className={chevronCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </div>
             </div>
           </div>
 
-          {/* Toggles */}
-          <div className="flex flex-col gap-4 md:col-span-2">
-            <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Accessibility className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Accessibility Needs</p>
-                  <p className="text-xs text-muted-foreground">Person with disability accommodations</p>
-                </div>
+          {/* Row 3: Passport Origin | Trip Pace */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Passport Origin */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="passport-select" className={labelCls}>Passport Origin</label>
+              <div className="relative flex items-center">
+                <Globe className={iconCls} />
+                <select
+                  id="passport-select"
+                  className={selectCls}
+                  value={passport}
+                  onChange={(e) => setPassport(e.target.value)}
+                >
+                  <option value="" disabled>Country</option>
+                  {COUNTRY_NAMES.map((name: string) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                <svg className={chevronCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
               </div>
-              <Switch checked={disability} onCheckedChange={setDisability} />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
-              <div className="flex items-center gap-3">
-                <UtensilsCrossed className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Dietary Restrictions</p>
-                  <p className="text-xs text-muted-foreground">Vegetarian, vegan, halal, etc.</p>
-                </div>
+            {/* Trip Pace */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="pace-select" className={labelCls}>Trip Pace</label>
+              <div className="relative flex items-center">
+                <Gauge className={iconCls} />
+                <select
+                  id="pace-select"
+                  className={selectCls}
+                  value={pace}
+                  onChange={(e) => setPace(e.target.value)}
+                >
+                  <option value="moderate">Moderate</option>
+                  <option value="slow">Slow &amp; Relaxed</option>
+                  <option value="fast">Fast &amp; Packed</option>
+                </select>
+                <svg className={chevronCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
               </div>
-              <Switch checked={dietary} onCheckedChange={setDietary} />
             </div>
           </div>
-        </div>
 
-        {/* Generate Button */}
-        <div className="mt-8">
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="h-12 min-h-[48px] w-full gap-2 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 touch-manipulation"
-            size="lg"
-          >
-            {isGenerating ? (
-              <>
-                <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                Generating Itineraries...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Generate AI Itineraries
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+          {/* Row 3: Accessibility | Dietary | Budget Slider (2 cols) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Accessibility Needs */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="accessibility-select" className={labelCls}>Accessibility Needs</label>
+              <div className="relative flex items-center">
+                <Accessibility className={iconCls} />
+                <select
+                  id="accessibility-select"
+                  className={selectCls}
+                  value={disability ? "yes" : "none"}
+                  onChange={(e) => setDisability(e.target.value !== "none")}
+                >
+                  <option value="none">None</option>
+                  <option value="yes">Wheelchair Accessible</option>
+                  <option value="limited">Limited Mobility</option>
+                  <option value="visual">Visual Aid Required</option>
+                </select>
+                <svg className={chevronCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+
+            {/* Dietary Restrictions */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="dietary-select" className={labelCls}>Dietary Restrictions</label>
+              <div className="relative flex items-center">
+                <UtensilsCrossed className={iconCls} />
+                <select
+                  id="dietary-select"
+                  className={selectCls}
+                  value={dietary ? "vegetarian" : "none"}
+                  onChange={(e) => setDietary(e.target.value !== "none")}
+                >
+                  <option value="none">None</option>
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="vegan">Vegan</option>
+                  <option value="gluten-free">Gluten-Free</option>
+                  <option value="halal">Halal</option>
+                  <option value="kosher">Kosher</option>
+                </select>
+                <svg className={chevronCls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+
+            {/* Per Person Budget — spans 2 cols */}
+            <div className="md:col-span-2 flex flex-col justify-end pb-0.5">
+              <div className="flex items-center justify-between mb-2">
+                <label className={cn(labelCls, "mb-0")}>Per Person Budget</label>
+                <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                  ${perPersonBudget[0].toLocaleString()}
+                </span>
+              </div>
+              <div className="px-1">
+                <Slider
+                  value={perPersonBudget}
+                  onValueChange={setPerPersonBudget}
+                  max={10000}
+                  min={0}
+                  step={50}
+                  className="py-1"
+                />
+                <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground font-mono">
+                  <span>$0</span>
+                  <span>$10k+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="pt-1">
+            <button
+              type="submit"
+              disabled={isGenerating}
+              className="w-full h-14 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-500 hover:to-blue-700 disabled:opacity-60 text-white text-lg font-bold rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-3 transition-all transform hover:scale-[1.01] active:scale-[0.99]"
+            >
+              {isGenerating ? (
+                <>
+                  <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Generating Itineraries…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5" />
+                  Generate Personalized Itinerary
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

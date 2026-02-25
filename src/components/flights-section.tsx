@@ -84,27 +84,9 @@ export function FlightsSection({ origin, destination, date, className }: Flights
 
   return (
     <div className={cn("rounded-2xl border border-border bg-card overflow-hidden", className)}>
-      <button
-        type="button"
-        onClick={handleToggle}
-        className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left hover:bg-muted/50 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Plane className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">Real flights for your route</h3>
-            <p className="text-xs text-muted-foreground">
-              {origin} → {destination} {date ? `· ${date}` : ""}
-            </p>
-          </div>
-        </div>
-        {expanded ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-      </button>
 
       {expanded && (
-        <div className="border-t border-border px-4 py-4">
+        <div className="border-border px-4 py-4">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />

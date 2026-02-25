@@ -5,11 +5,11 @@ import { TripInputForm } from '@/components/trip-input-form'
 import { JoinTrip } from '@/components/join-trip'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { MapPin, Calendar } from 'lucide-react'
+import { MapPin, Calendar, Plane, Building2, Route } from 'lucide-react'
 import { getTrips, getSavedPlans, getBookingsForUser } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 
-/** Large feature cards for the 'Why Use an AI Trip Planner' section */
+/** Feature cards for the 'Why Use an AI Trip Planner' section — icon-based, no photos */
 const FEATURE_CARDS = [
   {
     id: 'find-flights',
@@ -34,17 +34,17 @@ const FEATURE_CARDS = [
   },
 ]
 
-/** Popular destinations to inspire travel - static, no API call needed */
+/** Popular destinations with descriptions matching stitch */
 const INSPIRATION_DESTINATIONS = [
-  { id: 'tokyo', name: 'Tokyo', country: 'Japan', flag: '🇯🇵', budget: 'from $1,800', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80' },
-  { id: 'paris', name: 'Paris', country: 'France', flag: '🇫🇷', budget: 'from $1,500', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' },
-  { id: 'bali', name: 'Bali', country: 'Indonesia', flag: '🇮🇩', budget: 'from $900', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80' },
-  { id: 'new-york', name: 'New York', country: 'USA', flag: '🇺🇸', budget: 'from $1,200', image: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80' },
-  { id: 'rome', name: 'Rome', country: 'Italy', flag: '🇮🇹', budget: 'from $1,100', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80' },
-  { id: 'dubai', name: 'Dubai', country: 'UAE', flag: '🇦🇪', budget: 'from $1,400', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80' },
-  { id: 'barcelona', name: 'Barcelona', country: 'Spain', flag: '🇪🇸', budget: 'from $1,000', image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80' },
-  { id: 'kyoto', name: 'Kyoto', country: 'Japan', flag: '🇯🇵', budget: 'from $1,600', image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80' },
-  { id: 'maldives', name: 'Maldives', country: 'Maldives', flag: '🇲🇻', budget: 'from $2,500', image: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80' },
+  { id: 'tokyo', name: 'Tokyo', country: 'Japan', flag: '\uD83C\uDDEF\uD83C\uDDF5', budget: 'From $1,800', description: 'Neon streets, ancient temples, and sushi.', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80' },
+  { id: 'paris', name: 'Paris', country: 'France', flag: '\uD83C\uDDEB\uD83C\uDDF7', budget: 'From $900', description: 'Art, fashion, gastronomy and culture.', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' },
+  { id: 'bali', name: 'Bali', country: 'Indonesia', flag: '\uD83C\uDDEE\uD83C\uDDE9', budget: 'From $800', description: 'Island of the Gods, beaches and yoga.', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80' },
+  { id: 'rome', name: 'Rome', country: 'Italy', flag: '\uD83C\uDDEE\uD83C\uDDF9', budget: 'From $1,100', description: 'The Eternal City, history and pasta.', image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80' },
+  { id: 'new-york', name: 'New York', country: 'USA', flag: '\uD83C\uDDFA\uD83C\uDDF8', budget: 'From $500', description: 'The city that never sleeps.', image: 'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80' },
+  { id: 'london', name: 'London', country: 'UK', flag: '\uD83C\uDDEC\uD83C\uDDE7', budget: 'From $1,050', description: 'History, royalty, and modern culture.', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80' },
+  { id: 'sydney', name: 'Sydney', country: 'Australia', flag: '\uD83C\uDDE6\uD83C\uDDFA', budget: 'From $1,500', description: 'Harbour city, beaches and lifestyle.', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80' },
+  { id: 'cape-town', name: 'Cape Town', country: 'South Africa', flag: '\uD83C\uDDFF\uD83C\uDDE6', budget: 'From $1,300', description: 'Nature, wine, and breathtaking views.', image: 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=800&q=80' },
+  { id: 'santorini', name: 'Santorini', country: 'Greece', flag: '\uD83C\uDDEC\uD83C\uDDF7', budget: 'From $1,400', description: 'Sunsets, volcanoes and romance.', image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&q=80' },
 ]
 
 export default function Main() {
@@ -120,64 +120,82 @@ export default function Main() {
     <div className="min-h-screen bg-background">
       <TopNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-10 lg:px-8">
+      <main className="w-full px-4 py-6 sm:py-10 lg:px-8" style={{minHeight: '80vh'}}>
         {activeTab === 'new-trip' && (
           <>
-            {/* Hero + Trip form first */}
-            <div className="mb-10 sm:mb-14 text-center">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl font-display">
-                Smarter travel starts here
-              </h1>
-              <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-2xl mx-auto">
-                Find flight deals, hotels, and personalized itineraries — all in one place.
-              </p>
-            </div>
-
-            {/* Trip planning form */}
-            <div id="trip-form" className="scroll-mt-8 mb-16">
-              <TripInputForm onSubmit={handleGenerateDone} />
-            </div>
-
-            {/* Travel Inspiration grid */}
-            <div className="mb-16 pt-12 border-t border-border">
-              <div className="mb-8 text-center">
-                <h2 className="text-xl font-semibold text-foreground sm:text-2xl">Travel Inspiration</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Click any destination to plan your trip</p>
+            {/* Hero — full-bleed mountain background matching stitch */}
+            <div className="relative mb-12 overflow-hidden" style={{ minHeight: '420px' }}>
+              <img
+                src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80"
+                alt="Mountain landscape"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-background" />
+              <div className="relative z-10 flex flex-col items-center justify-center px-4 pt-16 pb-8 text-center sm:pt-20 sm:pb-10">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary backdrop-blur-sm">
+                  <span className="text-primary">✦</span> POWERED BY TRAVEL ENTHUSIASTS
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl font-display">
+                  Your Entire Trip,
+                </h1>
+                <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl lg:text-6xl font-display">
+                  Optimized by AI
+                </h1>
+                <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
+                  Tell us where, when, and how much. We build the perfect itinerary in seconds.
+                </p>
               </div>
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-3">
+              {/* Trip form — full width within hero */}
+              <div id="trip-form" className="relative z-10 w-full px-4 pb-8 scroll-mt-8">
+                <div className="rounded-2xl border border-border bg-card/95 backdrop-blur-md p-4 sm:p-6 shadow-2xl">
+                  <TripInputForm onSubmit={handleGenerateDone} />
+                </div>
+              </div>
+            </div>
+
+            {/* Travel Inspiration grid — with descriptions */}
+            <div className="mb-16 pt-12 border-t border-border">
+              <div className="mb-8 flex items-end justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Travel Inspiration</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Curated destinations trending this week</p>
+                </div>
+                <span className="hidden text-sm text-primary hover:underline cursor-pointer sm:block" onClick={() => handleQuickAction('focus-trip')}>
+                  View all destinations →
+                </span>
+              </div>
+              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
                 {INSPIRATION_DESTINATIONS.map((dest) => (
                   <div
                     key={dest.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => {
-                      setActiveTab('new-trip')
-                      setTimeout(() => {
-                        document.getElementById('trip-form')?.scrollIntoView({ behavior: 'smooth' })
-                        // Prefill destination via navigate state so TripInputForm can pick it up
-                      }, 100)
-                      handleQuickAction('focus-trip')
-                    }}
+                    onClick={() => handleQuickAction('focus-trip')}
                     onKeyDown={(e) => e.key === 'Enter' && handleQuickAction('focus-trip')}
-                    className="group relative overflow-hidden rounded-2xl border border-border bg-muted aspect-[4/3] cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="group relative overflow-hidden rounded-2xl border border-border bg-muted cursor-pointer transition-all hover:scale-[1.01] hover:shadow-xl hover:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   >
-                    <img
-                      src={dest.image}
-                      alt={dest.name}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    {/* Budget badge */}
-                    <div className="absolute top-3 right-3 rounded-full bg-black/50 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-white/90">
-                      {dest.budget}
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-lg leading-none">{dest.flag}</span>
-                        <h3 className="font-bold text-white text-base drop-shadow-md">{dest.name}</h3>
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={dest.image}
+                        alt={dest.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      {/* Budget badge */}
+                      <div className="absolute top-2.5 right-2.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-[11px] font-medium text-white/95">
+                        {dest.budget}
                       </div>
-                      <p className="mt-0.5 text-xs text-white/80">{dest.country}</p>
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-base leading-none">{dest.flag}</span>
+                          <h3 className="font-bold text-white text-sm drop-shadow-md">{dest.name}</h3>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Description below image */}
+                    <div className="px-3 py-2.5">
+                      <p className="text-xs text-muted-foreground leading-snug">{dest.description}</p>
                     </div>
                   </div>
                 ))}
@@ -191,7 +209,7 @@ export default function Main() {
                   Why Use an AI Trip Planner?
                 </h2>
                 <p className="mt-3 text-base text-muted-foreground sm:text-lg max-w-2xl mx-auto">
-                  Find flights, hotels, and personalized itineraries — all powered by AI.
+                  Experience travel planning reimagined. Smarter, faster, and tailored just for you.
                 </p>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 page-enter">
@@ -240,7 +258,7 @@ export default function Main() {
                 Existing Plans
               </h1>
               <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                Saved itineraries. Tap a plan to view the 3 options again — no new AI call.
+                Saved itineraries. Tap a plan to view the 3 options again — no waiting this time.
               </p>
             </div>
             {savedPlans.length === 0 ? (
@@ -313,6 +331,29 @@ export default function Main() {
           </div>
         )}
       </main>
+
+      {/* Footer — sticky, compact, matching stitch */}
+      <footer className="sticky bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-4 py-3 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
+              <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918" />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-foreground">Voyager AI</span>
+          </div>
+          <p className="hidden text-xs text-muted-foreground sm:block">© 2026 Voyager AI Inc. All rights reserved.</p>
+          <div className="flex items-center gap-3">
+            <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+            </a>
+            <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" /></svg>
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

@@ -1,0 +1,153 @@
+/* ── Place Card ── */
+.place-card {
+    @apply relative flex gap-3 rounded-xl border border-border bg-card p-3 shadow-sm hover:shadow-md transition-all;
+}
+
+.place-add-button {
+    @apply absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary hover:bg-card shadow-sm;
+}
+
+.place-thumbnail-link {
+    @apply shrink-0 overflow-hidden rounded-lg border border-border;
+}
+
+.place-thumbnail-img {
+    @apply h-24 w-28 object-cover;
+}
+
+.place-thumbnail-placeholder {
+    @apply flex h-24 w-28 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground;
+}
+
+.place-content {
+    @apply min-w-0 flex-1 py-1 pr-8;
+}
+
+.place-header {
+    @apply flex items-start justify-between gap-2;
+}
+
+.place-title {
+    @apply font-bold text-foreground;
+}
+
+.place-external-link {
+    @apply shrink-0 text-primary hover:text-primary/70;
+}
+
+.place-meta {
+    @apply mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground;
+}
+
+.place-rating-badge {
+    @apply mt-1 inline-flex items-center gap-0.5 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-bold text-amber-400;
+}
+
+.place-description {
+    @apply mt-1.5 text-xs text-muted-foreground line-clamp-2;
+}
+
+.place-actions {
+    @apply mt-2 flex items-center gap-3;
+}
+
+.place-action-link,
+.place-action-btn {
+    @apply inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline;
+}
+
+/* ── Explore Views ── */
+.explore-empty {
+    @apply py-8 text-sm text-muted-foreground;
+}
+
+/* Day Timeline */
+.day-timeline {
+    @apply relative flex flex-col;
+}
+
+.day-block {
+    @apply flex gap-4 pb-6 last:pb-0;
+}
+
+.day-indicator {
+    @apply flex flex-col items-center shrink-0;
+}
+
+.day-badge {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-primary bg-primary/10;
+}
+
+.day-badge-text {
+    @apply text-sm font-bold text-primary;
+}
+
+.day-line {
+    @apply mt-1 w-px flex-1 min-h-[12px] bg-border;
+}
+
+.day-content {
+    @apply min-w-0 flex-1 space-y-3 pt-0.5;
+}
+
+.day-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-muted-foreground;
+}
+
+/* Stays */
+.stay-list {
+    @apply space-y-3;
+}
+
+.stay-card {
+    @apply overflow-hidden rounded-xl border border-border bg-card;
+}
+
+.stay-card-body {
+    @apply flex gap-4 p-4;
+}
+
+.stay-content {
+    @apply min-w-0 flex-1;
+}
+
+.stay-header {
+    @apply flex items-start justify-between gap-2;
+}
+
+.stay-title {
+    @apply font-semibold text-foreground;
+}
+
+.stay-meta {
+    @apply mt-1 text-sm text-muted-foreground;
+}
+
+.stay-map-link {
+    @apply mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline;
+}
+
+/* Flights */
+.flight-list {
+    @apply space-y-4;
+}
+
+.flight-card {
+    @apply rounded-xl border border-border p-4;
+}
+
+.flight-label {
+    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+}
+
+.flight-route {
+    @apply font-medium text-foreground;
+}
+
+.flight-time {
+    @apply text-sm text-muted-foreground;
+}
+
+.flight-map-link {
+    @apply mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline;
+}

@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TopNav } from '@/components/top-nav'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -12,15 +10,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Sparkles, Check, Plus, Trash2, ExternalLink, Share2, Copy, Calendar } from 'lucide-react'
+import {
+  Sparkles, Check, Link2, Share2, Copy,
+  Calendar, Bookmark, ChevronLeft, ChevronRight, X,
+  Plane, Hotel, Utensils, Map as MapIcon, ExternalLink
+} from 'lucide-react'
 import { generateItinerary, planWithPicks, createShareableTrip } from '@/lib/api'
 import { FlightsSection } from '@/components/flights-section'
 import { ItineraryExploreView } from '@/components/itinerary-explore-view'
+import { PlacesMap } from '@/components/places-map'
 import { cn } from '@/lib/utils'
+
+import './Plan.css'
 
 function pickId(pick) {
   return `${pick.label}|${pick.google_maps_url || ''}`
 }
+
+const OPTION_TIERS = [
+  { key: 'budget', label: 'Budget', icon: '💰', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { key: 'balanced', label: 'Balanced', icon: '⚖️', color: 'text-primary', bg: 'bg-primary/10', recommended: true },
+  { key: 'premium', label: 'Premium', icon: '💎', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+]
+
+const EXPLORE_TABS = [
+  { id: 'go', label: 'Where to Go', icon: MapIcon },
+  { id: 'eat', label: 'Where to Eat', icon: Utensils },
+  { id: 'stay', label: 'Where to Stay', icon: Hotel },
+  { id: 'flight', label: 'About your flight', icon: Plane },
+]
 
 export default function Plan() {
   const navigate = useNavigate()
@@ -32,7 +50,6 @@ export default function Plan() {
   const [selectedId, setSelectedId] = useState(null)
   const [picks, setPicks] = useState([])
   const [customUrl, setCustomUrl] = useState('')
-  const [customLabel, setCustomLabel] = useState('')
   const [customPlanning, setCustomPlanning] = useState(false)
   const [customPlanError, setCustomPlanError] = useState(null)
   const [shareOpen, setShareOpen] = useState(false)
@@ -40,6 +57,9 @@ export default function Plan() {
   const [shareLoading, setShareLoading] = useState(false)
   const [shareError, setShareError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeTab, setActiveTab] = useState('go')
+  const [mapPlaces, setMapPlaces] = useState([])
 
   const fetchPlans = useCallback(() => {
     setGenerateError(null)
@@ -59,7 +79,7 @@ export default function Plan() {
       .catch((err) => {
         setOptions([])
         setSuggestedDaysForTrip(null)
-        setGenerateError(err?.message || 'Failed to load itineraries')
+        setGenerateError(err?.message || 'Something went wrong loading your itineraries. Please try again.')
       })
       .finally(() => setLoading(false))
   }, [])
@@ -89,10 +109,9 @@ export default function Plan() {
   const addCustomPlace = () => {
     const url = customUrl.trim()
     if (!url) return
-    const label = customLabel.trim() || (url.includes('google.com/maps') ? 'My place' : url.slice(0, 40))
+    const label = url.includes('google.com/maps') ? 'My place' : url.slice(0, 40)
     addPick({ label, google_maps_url: url })
     setCustomUrl('')
-    setCustomLabel('')
   }
 
   const handleContinueToQuote = () => {
@@ -103,8 +122,11 @@ export default function Plan() {
         selectedItineraryId: selected.id,
         selectedOption: selected,
         user_plan_id: location.state?.user_plan_id,
-        origin: location.state?.origin,
-        destination: location.state?.destination,
+        origin: planOrigin,
+        destination: planDestination,
+        start_date: planStartDate,
+        end_date: planEndDate,
+        shareCode
       },
     })
   }
@@ -129,10 +151,13 @@ export default function Plan() {
           user_plan_id: planMeta.user_plan_id,
           origin: planMeta.origin,
           destination: planMeta.destination,
+          start_date: planMeta.start_date,
+          end_date: planMeta.end_date,
+          shareCode
         },
       })
     } catch (err) {
-      setCustomPlanError(err?.message || 'Failed to generate plan from picks')
+      setCustomPlanError(err?.message || 'Something went wrong building your plan. Please try again.')
     } finally {
       setCustomPlanning(false)
     }
@@ -142,6 +167,7 @@ export default function Plan() {
   const planOrigin = planMeta.origin || ''
   const planDestination = planMeta.destination || ''
   const planStartDate = planMeta.start_date || ''
+  const planEndDate = planMeta.end_date || ''
 
   const handleShareOpen = async (open) => {
     setShareOpen(open)
@@ -158,7 +184,7 @@ export default function Plan() {
         })
         setShareCode(res.invite_code || '')
       } catch (err) {
-        setShareError(err?.message || 'Failed to create invite code')
+        setShareError(err?.message || 'Something went wrong creating the invite code. Please try again.')
       } finally {
         setShareLoading(false)
       }
@@ -173,257 +199,299 @@ export default function Plan() {
     })
   }
 
+  const selectedOption = options.find((o) => o.id === (selectedId || options[0]?.id)) || options[0]
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="plan-page">
       <TopNav activeTab="new-trip" onTabChange={() => navigate('/')} />
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:px-8">
-        <div className="mb-6 sm:mb-8 text-center page-enter">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl">
-            Choose or build your itinerary
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base px-1">
-            Pick one of the three plans, or select activities and add your own places — then get an AI plan and quote.
-          </p>
+      <div className="plan-layout">
+
+        {/* ── LEFT: My Picks sidebar ── */}
+        <div className={cn('sidebar-container', sidebarOpen ? 'open' : 'closed')}>
+          <div className="sidebar-content">
+            <div className="sidebar-header">
+              <div className="flex items-center gap-2">
+                <h3 className="sidebar-header-title">
+                  <Bookmark className="h-5 w-5 text-primary" />
+                  My Picks
+                </h3>
+                <span className="sidebar-header-badge">
+                  {picks.length} item{picks.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                aria-label="Close My Picks"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="sidebar-form">
+              <label className="sidebar-form-label">Add Custom Place</label>
+              <div className="flex flex-col gap-2">
+                <textarea
+                  className="sidebar-form-textarea"
+                  placeholder="Paste Google Maps links here..."
+                  value={customUrl}
+                  onChange={(e) => setCustomUrl(e.target.value)}
+                />
+                <button type="button" onClick={addCustomPlace} className="sidebar-form-button">
+                  <Link2 className="h-4 w-4" />
+                  Add to List
+                </button>
+              </div>
+            </div>
+
+            <div className="sidebar-list">
+              <div className="sidebar-list-header">
+                <h4 className="sidebar-list-title">Current Picks</h4>
+                {picks.length > 0 && (
+                  <button type="button" onClick={() => setPicks([])} className="sidebar-list-clear">
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {picks.length === 0 ? (
+                <div className="sidebar-empty">
+                  <Bookmark className="sidebar-empty-icon" />
+                  <p className="sidebar-empty-title">No picks yet.</p>
+                  <p className="sidebar-empty-desc">Add items from the plan or paste a Google Maps link above.</p>
+                </div>
+              ) : (
+                picks.map((p) => (
+                  <div key={p.id} className="sidebar-item group">
+                    <div className="sidebar-item-icon">
+                      <MapIcon className="h-6 w-6" />
+                    </div>
+                    <div className="sidebar-item-content">
+                      <div className="sidebar-item-header">
+                        <h4 className="sidebar-item-title">{p.label}</h4>
+                        <button type="button" onClick={() => removePick(p.id)} className="sidebar-item-remove">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {p.google_maps_url && (
+                        <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" className="sidebar-item-link">
+                          <ExternalLink className="h-3 w-3" />
+                          Google Maps
+                        </a>
+                      )}
+                      <span className="sidebar-item-badge">NEW</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="sidebar-footer">
+              {customPlanError && <p className="sidebar-error">{customPlanError}</p>}
+              <button
+                type="button"
+                disabled={picks.length === 0 || customPlanning}
+                onClick={handleGetAIPlanAndQuote}
+                className="sidebar-cta"
+              >
+                {customPlanning ? (
+                  <>
+                    <span className="sidebar-cta-spinner" />
+                    Generating plan…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Get AI plan &amp; quote
+                  </>
+                )}
+              </button>
+              <p className="sidebar-footer-text">AI will optimize the route based on your picks.</p>
+            </div>
+          </div>
         </div>
 
-        {planOrigin && planDestination && (
-          <div className="mb-8 page-enter">
-            <FlightsSection origin={planOrigin} destination={planDestination} date={planStartDate} />
-          </div>
-        )}
+        {/* ── CENTER: Map panel ── */}
+        <div className="maps-section">
+          <PlacesMap destination={planDestination} places={mapPlaces} className="h-full w-full" />
+        </div>
 
-        {loading ? (
-          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary bg-primary/10">
-              <span className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+        {/* ── RIGHT: Itinerary Panel ── */}
+        <div className={cn('itinerary-panel')}>
+          <div className="itinerary-header">
+            <div className="itinerary-header-badge-row">
+              <span className="itinerary-header-badge">Active Trip</span>
+              {(planStartDate || planEndDate) && (
+                <span className="itinerary-header-date">
+                  <Calendar className="h-3 w-3" />
+                  {planStartDate}{planEndDate && planStartDate !== planEndDate ? ` – ${planEndDate}` : ''}
+                </span>
+              )}
             </div>
-            <p className="text-lg font-medium text-foreground">Loading plans…</p>
-            <p className="text-sm text-muted-foreground">Fetching your itineraries</p>
+            <h1 className="itinerary-header-title">
+              {planDestination ? `Your ${planDestination} Adventure` : 'Your Trip Adventure'}
+            </h1>
+            <p className="itinerary-header-subtitle">
+              Generated by Voyager AI{planOrigin && planDestination ? ` for ${planOrigin} → ${planDestination}` : ''}.
+            </p>
           </div>
-        ) : generateError && options.length === 0 ? (
-          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-8">
-            <p className="text-center text-sm text-destructive">{generateError}</p>
-            <Button onClick={fetchPlans}>Try again</Button>
-          </div>
-        ) : (
-          <div className="mb-6 sm:mb-8 space-y-6 page-enter">
-            {suggestedDaysForTrip != null && (
-              <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Calendar className="h-5 w-5 text-primary" />
+
+          <div className="itinerary-scrollable-content">
+            {loading ? (
+              <div className="loading-container">
+                <div className="loading-icon-wrapper">
+                  <span className="loading-spinner" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    Suggested trip length: {suggestedDaysForTrip} {suggestedDaysForTrip === 1 ? 'day' : 'days'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">AI-recommended duration for {planOrigin && planDestination ? `${planOrigin} → ${planDestination}` : 'this trip'}</p>
-                </div>
+                <p className="loading-title">Loading plans…</p>
+                <p className="loading-subtitle">Fetching your itineraries</p>
               </div>
-            )}
-            {/* Plan selector pills */}
-            <div className="flex flex-wrap gap-2">
-              {options.map((option, index) => {
-                const isSelected = selectedId === option.id
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setSelectedId(option.id)}
-                    className={cn(
-                      'inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-left transition-all',
-                      isSelected ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card hover:border-primary/30'
-                    )}
-                  >
-                    <span className="font-semibold">Plan {index + 1}</span>
-                    <span className="text-sm text-muted-foreground">{option.label}</span>
-                    <span className="font-bold tabular-nums text-primary">${(option.total_estimated_cost ?? 0).toLocaleString()}</span>
-                    {isSelected && <Check className="h-4 w-4 text-primary" />}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* imean.ai style: Where to Go / Eat / Stay / Flight tabs + map */}
-            {(() => {
-              const selected = options.find((o) => o.id === (selectedId || options[0]?.id)) || options[0]
-              if (!selected) return null
-              return (
-                <div className={cn(
-                  'rounded-2xl border-2 p-4 sm:p-6 transition-colors',
-                  selectedId === selected.id ? 'border-primary bg-primary/5' : 'border-border bg-card'
-                )}>
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground">{selected.label}</h2>
-                    <Button
-                      variant={selectedId === selected.id ? 'secondary' : 'default'}
-                      className={cn(
-                        'gap-1.5',
-                        selectedId === selected.id && 'ring-2 ring-primary ring-offset-2'
-                      )}
-                      onClick={() => setSelectedId(selected.id)}
-                    >
-                      <Check className="h-4 w-4" />
-                      {selectedId === selected.id ? 'Selected' : 'Choose this plan'}
-                    </Button>
+            ) : generateError && options.length === 0 ? (
+              <div className="error-container">
+                <p className="error-text">{generateError}</p>
+                <Button onClick={fetchPlans}>Try again</Button>
+              </div>
+            ) : (
+              <>
+                {suggestedDaysForTrip != null && (
+                  <div className="suggested-days-banner">
+                    <Calendar className="h-5 w-5 shrink-0 text-primary" />
+                    <p className="suggested-days-banner-text">
+                      AI suggests <span className="suggested-days-highlight">{suggestedDaysForTrip} day{suggestedDaysForTrip !== 1 ? 's' : ''}</span> for this trip
+                    </p>
                   </div>
+                )}
+
+                <div className="option-cards-grid">
+                  {options.map((option, index) => {
+                    const tier = OPTION_TIERS[index] || OPTION_TIERS[1]
+                    const isSelected = selectedId === option.id
+                    return (
+                      <div
+                        key={option.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedId(option.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && setSelectedId(option.id)}
+                        className={cn('option-card group', isSelected ? 'selected' : 'default')}
+                      >
+                        {tier.recommended && <div className="option-card-recommended">Recommended</div>}
+                        <div className="option-card-header">
+                          <span className={cn('option-card-title', isSelected ? 'selected' : 'default')}>
+                            {option.label || tier.label}
+                          </span>
+                          <span className="text-base">{tier.icon}</span>
+                        </div>
+                        <div className="option-card-price">
+                          ${(option.total_estimated_cost ?? 0).toLocaleString()}
+                        </div>
+                        <div className="option-card-meta">
+                          <span className="option-card-meta-item"><Plane className="h-3 w-3" /> {option.flight_info || 'Flight included'}</span>
+                          <span className="option-card-meta-item"><Hotel className="h-3 w-3" /> {option.hotel_info || 'Hotel included'}</span>
+                        </div>
+                        {isSelected && (
+                          <div className="option-card-check"><Check className="h-3 w-3 text-white" /></div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {planOrigin && planDestination && (
+                  <div className="flights-section-wrapper">
+                    <FlightsSection origin={planOrigin} destination={planDestination} date={planStartDate} />
+                  </div>
+                )}
+
+                <div className="explore-tabs-container">
+                  {EXPLORE_TABS.map((tab) => {
+                    const Icon = tab.icon
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn('explore-tab-button', activeTab === tab.id ? 'active' : 'default')}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {selectedOption && (
                   <ItineraryExploreView
-                    option={selected}
+                    option={selectedOption}
                     destination={planDestination}
                     origin={planOrigin}
                     onAddPick={addPick}
+                    activeTab={activeTab}
+                    onPlacesReady={setMapPlaces}
                   />
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
-        <div className="mb-6 sm:mb-8 rounded-2xl border border-border bg-card p-4 sm:p-6">
-          <h3 className="mb-1 text-base font-semibold text-foreground sm:text-lg">My picks</h3>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Add activities from the plans above, or paste Google Maps links for places you like. Then request an AI plan and quote.
-          </p>
-
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-2">
-            <div className="flex-1 min-w-0 space-y-1">
-              <Label htmlFor="custom_url" className="text-xs">Google Maps or place URL</Label>
-              <Input
-                id="custom_url"
-                type="url"
-                placeholder="https://www.google.com/maps/..."
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                className="h-10 sm:h-9 min-h-[44px]"
-              />
-            </div>
-            <div className="w-full sm:w-40 space-y-1">
-              <Label htmlFor="custom_label" className="text-xs">Label (optional)</Label>
-              <Input
-                id="custom_label"
-                type="text"
-                placeholder="e.g. My café"
-                value={customLabel}
-                onChange={(e) => setCustomLabel(e.target.value)}
-                className="h-10 sm:h-9 min-h-[44px]"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="button" variant="outline" size="sm" className="gap-1 h-10 min-h-[44px] sm:h-9 w-full sm:w-auto" onClick={addCustomPlace}>
-                <Plus className="h-3.5 w-3.5" />
-                Add place
-              </Button>
-            </div>
+                )}
+              </>
+            )}
           </div>
 
-          {picks.length > 0 && (
-            <ul className="mb-4 space-y-2">
-              {picks.map((p) => (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium text-foreground truncate">{p.label}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {p.google_maps_url && (
-                      <a
-                        href={p.google_maps_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                        aria-label="Open in Google Maps"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => removePick(p.id)}
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {customPlanError && (
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-destructive">{customPlanError}</p>
-              <Button variant="outline" size="sm" onClick={() => { setCustomPlanError(null); handleGetAIPlanAndQuote() }}>
-                Try again
+          <div className="bottom-action-bar">
+            <div className="bottom-action-wrapper">
+              {/* Sidebar toggle moved to action bar */}
+              <Button
+                variant="outline"
+                className="mr-auto flex items-center gap-2"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                aria-label="Toggle My Picks"
+              >
+                <Bookmark className="h-4 w-4" />
+                {sidebarOpen ? 'Hide Picks' : 'My Picks'}
               </Button>
+
+              <Dialog open={shareOpen} onOpenChange={handleShareOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="share-button" disabled={loading || options.length === 0}>
+                    <Share2 className="h-4 w-4" />
+                    Share Trip
+                    {shareCode && <span className="share-code-badge">{shareCode}</span>}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Share this trip</DialogTitle>
+                    <DialogDescription>Share the invite code with others. They can enter it under Join Trip.</DialogDescription>
+                  </DialogHeader>
+                  {shareLoading ? (
+                    <p className="share-dialog-loading">Creating invite code…</p>
+                  ) : shareError ? (
+                    <p className="share-dialog-error">{shareError}</p>
+                  ) : shareCode ? (
+                    <div className="share-dialog-code-container">
+                      <p className="share-dialog-code-label">Invite code</p>
+                      <div className="share-dialog-code-box">
+                        <code className="share-dialog-code-text">{shareCode}</code>
+                        <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyCode} aria-label="Copy code">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {copied && <p className="share-dialog-code-success">Copied to clipboard.</p>}
+                    </div>
+                  ) : null}
+                </DialogContent>
+              </Dialog>
+
+              <button
+                type="button"
+                onClick={handleContinueToQuote}
+                disabled={!selectedOption}
+                className="continue-quote-button"
+              >
+                Continue to Quote
+              </button>
             </div>
-          )}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              className="gap-2 min-h-[44px]"
-              disabled={picks.length === 0 || customPlanning}
-              onClick={handleGetAIPlanAndQuote}
-            >
-              {customPlanning ? (
-                <>
-                  <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                  Generating plan…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Get AI plan & quote
-                </>
-              )}
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {picks.length === 0 ? 'Add at least one place to use this.' : `Using ${picks.length} place(s).`}
-            </span>
           </div>
         </div>
-
-        <div className="mt-6 sm:mt-8 flex flex-col-reverse sm:flex-row flex-wrap items-stretch sm:items-center justify-end gap-3">
-          <Dialog open={shareOpen} onOpenChange={handleShareOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 min-h-[44px] w-full sm:w-auto" disabled={loading || options.length === 0}>
-                <Share2 className="h-4 w-4 shrink-0" />
-                Share trip
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Share this trip</DialogTitle>
-                <DialogDescription>
-                  Share the invite code with others. They can enter it under Join Trip and the plan will appear in their Existing Plans.
-                </DialogDescription>
-              </DialogHeader>
-              {shareLoading ? (
-                <p className="py-4 text-sm text-muted-foreground">Creating invite code…</p>
-              ) : shareError ? (
-                <p className="py-2 text-sm text-destructive">{shareError}</p>
-              ) : shareCode ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Invite code</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 rounded-lg border border-border bg-muted/50 px-4 py-3 text-lg font-mono tracking-widest">
-                      {shareCode}
-                    </code>
-                    <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyCode} aria-label="Copy code">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {copied && <p className="text-sm text-emerald-600">Copied to clipboard.</p>}
-                </div>
-              ) : null}
-            </DialogContent>
-          </Dialog>
-          <Button className="gap-2 min-h-[44px] w-full sm:w-auto" onClick={handleContinueToQuote}>
-            Continue to Quote
-          </Button>
-        </div>
-      </main>
+      </div>
     </div>
   )
 }
